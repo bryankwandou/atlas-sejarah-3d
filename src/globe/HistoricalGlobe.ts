@@ -37,10 +37,10 @@ export class HistoricalGlobe {
   private territoryCanvas: HTMLCanvasElement;
   private territoryTexture: THREE.CanvasTexture;
 
-  private targetLat = 18.0;
-  private targetLng = 55.0;
-  private currentLat = 18.0;
-  private currentLng = 55.0;
+  private targetLat = 22.0;
+  private targetLng = 42.0;
+  private currentLat = 22.0;
+  private currentLng = 42.0;
   private targetDistance = 2.65;
   private currentDistance = 2.65;
 
@@ -233,19 +233,19 @@ export class HistoricalGlobe {
 
     // 2. Deep Realistic Bathymetric Oceans
     const oceanGrad = baseCtx.createLinearGradient(0, 0, 0, h);
-    oceanGrad.addColorStop(0, "#08142c");
-    oceanGrad.addColorStop(0.25, "#0b1c3e");
-    oceanGrad.addColorStop(0.5, "#0d244f");
-    oceanGrad.addColorStop(0.75, "#0b1c3e");
-    oceanGrad.addColorStop(1, "#08142c");
+    oceanGrad.addColorStop(0, "#050d1a");
+    oceanGrad.addColorStop(0.25, "#08162b");
+    oceanGrad.addColorStop(0.5, "#0b1d38");
+    oceanGrad.addColorStop(0.75, "#08162b");
+    oceanGrad.addColorStop(1, "#050d1a");
     baseCtx.fillStyle = oceanGrad;
     baseCtx.fillRect(0, 0, w, h);
 
     // 3. Glowing Continental Shelf Shallow Water (Sunda Shelf, North Sea, Caribbean)
     baseCtx.save();
-    baseCtx.shadowColor = "#1d4ed8";
-    baseCtx.shadowBlur = 18;
-    baseCtx.fillStyle = "#163c78";
+    baseCtx.shadowColor = "#0284c7";
+    baseCtx.shadowBlur = 12;
+    baseCtx.fillStyle = "#102947";
     traceLandPaths(baseCtx);
     baseCtx.fill();
     baseCtx.restore();
@@ -256,14 +256,14 @@ export class HistoricalGlobe {
     biomeCanvas.height = h;
     const bCtx = biomeCanvas.getContext("2d")!;
 
-    // Base temperate vegetation (rich muted forest olive)
-    bCtx.fillStyle = "#2d4f34";
+    // Base temperate vegetation (natural earthy forest olive)
+    bCtx.fillStyle = "#2d4b33";
     bCtx.fillRect(0, 0, w, h);
 
     // Equatorial Tropical Rainforest Belt (Nusantara, Central Africa, Amazon)
     const tropGrad = bCtx.createLinearGradient(0, h * 0.40, 0, h * 0.62);
     tropGrad.addColorStop(0, "transparent");
-    tropGrad.addColorStop(0.5, "#1e5b2c");
+    tropGrad.addColorStop(0.5, "#1b5226");
     tropGrad.addColorStop(1, "transparent");
     bCtx.fillStyle = tropGrad;
     bCtx.fillRect(0, h * 0.40, w, h * 0.22);
@@ -296,15 +296,15 @@ export class HistoricalGlobe {
     };
 
     // Realistic desert & arid regions (Sahara, Arabia, Iran, Thar, Gobi, Outback, SW USA)
-    drawDesertBiome(16, 23, 34, 13, "#c99a5e", 0.96); // Sahara
-    drawDesertBiome(47, 24, 20, 13, "#d4a468", 0.96); // Arabia
-    drawDesertBiome(56, 32, 16, 10, "#ab8452", 0.88); // Iran / Mesopotamia
-    drawDesertBiome(72, 43, 24, 11, "#9e8253", 0.85); // Central Asian Steppes
-    drawDesertBiome(104, 42, 22, 10, "#c49f6b", 0.88); // Gobi / Taklamakan
-    drawDesertBiome(88, 33, 16, 8, "#7a6a58", 0.90); // Tibetan Plateau
-    drawDesertBiome(133, -24, 18, 10, "#bd7b4c", 0.90); // Australian Outback
-    drawDesertBiome(-107, 34, 16, 11, "#9e825a", 0.80); // American Southwest
-    drawDesertBiome(22, -26, 14, 9, "#b39462", 0.78); // Kalahari
+    drawDesertBiome(16, 23, 34, 13, "#c29559", 0.96); // Sahara
+    drawDesertBiome(47, 24, 20, 13, "#cca062", 0.96); // Arabia
+    drawDesertBiome(56, 32, 16, 10, "#a67f4c", 0.88); // Iran / Mesopotamia
+    drawDesertBiome(72, 43, 24, 11, "#987d4f", 0.85); // Central Asian Steppes
+    drawDesertBiome(104, 42, 22, 10, "#be9864", 0.88); // Gobi / Taklamakan
+    drawDesertBiome(88, 33, 16, 8, "#756554", 0.90); // Tibetan Plateau
+    drawDesertBiome(133, -24, 18, 10, "#b87445", 0.90); // Australian Outback
+    drawDesertBiome(-107, 34, 16, 11, "#997e55", 0.80); // American Southwest
+    drawDesertBiome(22, -26, 14, 9, "#ae8f5d", 0.78); // Kalahari
 
     // Polar snow/ice caps (Arctic & Antarctic)
     const polarGradNorth = bCtx.createLinearGradient(0, 0, 0, h * 0.14);
@@ -330,8 +330,8 @@ export class HistoricalGlobe {
 
     // Subtle natural coastline border
     baseCtx.strokeStyle = "#38bdf8";
-    baseCtx.lineWidth = 0.8;
-    baseCtx.globalAlpha = 0.45;
+    baseCtx.lineWidth = 0.6;
+    baseCtx.globalAlpha = 0.35;
     traceLandPaths(baseCtx);
     baseCtx.stroke();
     baseCtx.globalAlpha = 1.0;
@@ -363,33 +363,38 @@ export class HistoricalGlobe {
     this.territoryMesh = new THREE.Mesh(territoryGeo, territoryMat);
     this.globeGroup.add(this.territoryMesh);
 
-    // Realistic Delicate Atmospheric Rim Shader (NOT an opaque giant disc!)
-    const atmosGeo = new THREE.SphereGeometry(this.GLOBE_RADIUS * 1.025, 64, 64);
+    // Realistic Delicate Atmospheric Rim Shader (FrontSide Fresnel, zero outer disk)
+    const atmosGeo = new THREE.SphereGeometry(this.GLOBE_RADIUS * 1.016, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
       vertexShader: `
         varying vec3 vNormal;
+        varying vec3 vPosition;
         void main() {
           vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+          vPosition = mvPos.xyz;
+          gl_Position = projectionMatrix * mvPos;
         }
       `,
       fragmentShader: `
         varying vec3 vNormal;
+        varying vec3 vPosition;
         void main() {
-          float intensity = pow(0.72 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.8);
-          intensity = clamp(intensity, 0.0, 1.0);
-          vec3 atmosphereColor = vec3(0.24, 0.55, 0.98);
-          gl_FragColor = vec4(atmosphereColor, intensity * 0.75);
+          vec3 viewDir = normalize(-vPosition);
+          float rim = 1.0 - max(dot(vNormal, viewDir), 0.0);
+          float alpha = pow(rim, 4.0) * 0.78;
+          vec3 atmosphereColor = vec3(0.34, 0.64, 1.0);
+          gl_FragColor = vec4(atmosphereColor, alpha);
         }
       `,
       blending: THREE.AdditiveBlending,
-      side: THREE.BackSide,
+      side: THREE.FrontSide,
       transparent: true,
       depthWrite: false,
     });
 
     this.atmosphereMesh = new THREE.Mesh(atmosGeo, atmosMat);
-    this.scene.add(this.atmosphereMesh);
+    this.globeGroup.add(this.atmosphereMesh);
   }
 
   /**

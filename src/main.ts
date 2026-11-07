@@ -310,7 +310,7 @@ function initAtlasApp(): void {
   const sriwijayaEvent = HISTORICAL_EVENTS.find((e) => e.id === "sriwijaya-682")!;
 
   const state: AtlasState = {
-    currentYear: 682,
+    currentYear: 622,
     currentEraId: "medieval",
     showEvents: true,
     showLeaderboard: false,
