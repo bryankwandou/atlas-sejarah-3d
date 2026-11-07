@@ -1,0 +1,1188 @@
+@import "./tokens.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+.atlas-app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   3D GLOBE VIEWPORT & OVERLAY MARKERS
+   ========================================================================== */
+
+.globe-viewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  z-index: 1;
+}
+
+.globe-viewport:active {
+  cursor: grabbing;
+}
+
+.globe-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.territory-labels-layer,
+.event-markers-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Floating Empire/Polity Name Labels on the 3D Globe (00:08 - 00:26 in video) */
+.globe-territory-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  cursor: pointer;
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--text-body-md);
+  letter-spacing: 0.01em;
+  text-align: center;
+  white-space: nowrap;
+  text-shadow:
+    0 2px 6px var(--color-background),
+    0 0 12px var(--color-background),
+    0 1px 2px var(--color-background);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.globe-territory-label:hover {
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline-strong);
+}
+
+/* Interactive Event & Battle Pill Markers on the 3D Globe (00:14 - 00:27 in video) */
+.globe-event-pin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  background: var(--pin-bg);
+  border: 1px solid var(--pin-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-elevated);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  white-space: nowrap;
+  backdrop-filter: blur(12px);
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.globe-event-pin:hover,
+.globe-event-pin.is-selected {
+  border-color: var(--pin-badge-amber);
+  background: var(--color-surface-elevated);
+}
+
+.globe-event-pin-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--pin-badge-amber);
+  color: var(--pin-badge-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.globe-event-pin-badge svg {
+  width: 16px;
+  height: 16px;
+}
+
+.globe-event-pin-label {
+  max-width: 210px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   CENTER-TOP FLOATING ERA TOAST (00:08 in video: "Awal zaman modern / 1500 M - 1799 M")
+   ========================================================================== */
+
+.era-toast {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translate(-50%, -12px);
+  z-index: 5;
+  pointer-events: none;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-outline-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-6);
+  text-align: center;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-elevated);
+  opacity: 0;
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.era-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.era-toast-title {
+  font-size: var(--text-headline-md);
+  font-weight: 800;
+  color: var(--color-on-surface);
+  letter-spacing: -0.02em;
+}
+
+.era-toast-range {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-md);
+  font-weight: 600;
+  color: var(--color-on-surface-muted);
+}
+
+/* ==========================================================================
+   TOP-LEFT HUD (00:11 - 00:13, 00:46 - 00:52 in video)
+   ========================================================================== */
+
+.hud-top-left {
+  position: absolute;
+  top: var(--space-5);
+  left: var(--space-6);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 480px;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.brand-globe-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  box-shadow: var(--shadow-glow-blue);
+}
+
+.brand-title {
+  font-size: var(--text-title-sm);
+  font-weight: 800;
+  color: var(--color-on-surface);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.brand-subtitle {
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  color: var(--color-on-surface-muted);
+  letter-spacing: 0.1em;
+  margin-top: 2px;
+}
+
+.year-control-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.year-display {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+
+.year-number {
+  font-size: var(--text-display-lg);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--color-on-surface);
+}
+
+.year-suffix {
+  font-size: var(--text-headline-md);
+  font-weight: 700;
+  color: var(--color-on-surface-muted);
+}
+
+.hud-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hud-pill-btn,
+.hud-circle-btn {
+  position: relative;
+  min-height: 48px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline-strong);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  transition: background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.hud-pill-btn {
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+}
+
+.hud-circle-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+}
+
+.hud-pill-btn:hover,
+.hud-circle-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-on-surface);
+}
+
+.hud-pill-btn.is-active,
+.hud-circle-btn.is-active {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+/* Tooltip on hover (matching 00:13 in video: "Tampilkan peristiwa dan pertempuran") */
+.hud-circle-btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-outline-strong);
+  color: var(--color-on-surface);
+  font-size: var(--text-label-sm);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: var(--shadow-elevated);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 20;
+}
+
+.hud-circle-btn[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.hud-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.era-badge-row {
+  display: flex;
+  align-items: center;
+}
+
+.era-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-label-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.era-pill[data-era="ancient"] {
+  background: var(--era-ancient-bg);
+  color: var(--era-ancient);
+}
+
+.era-pill[data-era="classical"] {
+  background: var(--era-classical-bg);
+  color: var(--era-classical);
+}
+
+.era-pill[data-era="medieval"] {
+  background: var(--era-medieval-bg);
+  color: var(--era-medieval);
+}
+
+.era-pill[data-era="early-modern"] {
+  background: var(--era-early-modern-bg);
+  color: var(--era-early-modern);
+}
+
+.era-pill[data-era="modern"] {
+  background: var(--era-modern-bg);
+  color: var(--era-modern);
+}
+
+.step-nav-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.step-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--color-on-surface-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.step-btn:hover {
+  background: var(--color-surface);
+  border-color: var(--color-outline);
+  color: var(--color-on-surface);
+}
+
+.step-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.quick-years-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.quick-year-chip {
+  padding: var(--space-1) var(--space-3);
+  min-height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  color: var(--color-on-surface-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.quick-year-chip:hover,
+.quick-year-chip.is-selected {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-primary);
+  color: var(--color-on-surface);
+}
+
+/* ==========================================================================
+   RIGHT-SIDE HUD COLUMN: MODE TABS & GLASS CARDS (00:28 - 00:45 in video)
+   ========================================================================== */
+
+.hud-right-column {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-6);
+  bottom: 108px;
+  width: 410px;
+  max-width: calc(100vw - 32px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+
+.mode-tabs {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(16px);
+  align-self: flex-end;
+}
+
+.mode-tab {
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: var(--color-on-surface-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-sm);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease;
+}
+
+.mode-tab:hover {
+  color: var(--color-on-surface);
+}
+
+.mode-tab.is-active {
+  background: var(--color-on-surface);
+  color: var(--color-background);
+}
+
+.right-panels-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.glass-card {
+  pointer-events: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline-strong);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-elevated);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.is-hidden {
+  display: none !important;
+}
+
+.card-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.event-category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-secondary);
+  font-size: var(--text-label-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.badge-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.card-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--color-on-surface-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.card-close-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-on-surface);
+}
+
+.card-close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.event-card-title,
+.panel-heading {
+  font-size: var(--text-headline-sm);
+  font-weight: 800;
+  color: var(--color-on-surface);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.event-card-desc {
+  font-size: var(--text-body-md);
+  line-height: 1.6;
+  color: var(--color-on-surface-muted);
+}
+
+/* Archaeological / Prasasti Inscription Box inside Event Card */
+.event-artifact-box {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-outline);
+}
+
+.artifact-visual {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-background);
+  border: 1px solid var(--color-outline);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artifact-visual canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.artifact-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.artifact-label {
+  font-size: var(--text-label-sm);
+  font-weight: 800;
+  color: var(--color-secondary);
+  letter-spacing: 0.06em;
+}
+
+.artifact-title {
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  color: var(--color-on-surface);
+}
+
+.artifact-quote {
+  font-size: var(--text-label-sm);
+  font-style: italic;
+  color: var(--color-on-surface-muted);
+  line-height: 1.4;
+}
+
+.event-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.btn-jump-year {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline-strong);
+  background: var(--color-surface-hover);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-jump-year:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn-secondary-action {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline);
+  background: transparent;
+  color: var(--color-on-surface-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary-action:hover {
+  color: var(--color-on-surface);
+  border-color: var(--color-outline-strong);
+}
+
+/* ==========================================================================
+   "KISAH" DRAWER (00:32 - 00:40 in video)
+   ========================================================================== */
+
+.kisah-card {
+  max-height: 440px;
+  overflow: hidden;
+}
+
+.kisah-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.kisah-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.kisah-item:hover,
+.kisah-item.is-active {
+  background: var(--color-surface-hover);
+  border-color: var(--color-outline-strong);
+}
+
+.kisah-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kisah-icon-box svg {
+  width: 22px;
+  height: 22px;
+}
+
+.kisah-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.kisah-years {
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  color: var(--color-on-surface-muted);
+}
+
+.kisah-title {
+  font-size: var(--text-body-lg);
+  font-weight: 800;
+  color: var(--color-on-surface);
+  margin-top: 2px;
+}
+
+.kisah-desc {
+  font-size: var(--text-body-md);
+  color: var(--color-on-surface-muted);
+  line-height: 1.45;
+  margin-top: var(--space-1);
+}
+
+.kisah-chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--color-on-surface-muted);
+  align-self: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   "NEGARA TERBESAR PADA [TAHUN]" LEADERBOARD CARD (00:41 - 00:45 in video)
+   ========================================================================== */
+
+.leaderboard-card {
+  max-height: 280px;
+}
+
+.leaderboard-heading {
+  font-size: var(--text-title-sm);
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
+.leaderboard-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.14s ease;
+}
+
+.leaderboard-row:hover {
+  background: var(--color-surface-hover);
+}
+
+.leaderboard-name-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.leaderboard-color-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.leaderboard-name {
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-area {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-md);
+  font-weight: 600;
+  color: var(--color-on-surface-muted);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   CHALLENGE / QUIZ PANEL
+   ========================================================================== */
+
+.challenge-options {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+}
+
+.challenge-option-btn {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-outline);
+  background: var(--color-surface-subtle);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.challenge-option-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-outline-strong);
+}
+
+.challenge-option-btn.is-correct {
+  border-color: var(--color-success);
+  background: var(--era-medieval-bg);
+}
+
+.challenge-option-btn.is-wrong {
+  border-color: var(--color-error);
+  background: var(--era-ancient-bg);
+}
+
+.challenge-feedback {
+  font-size: var(--text-body-md);
+  font-weight: 600;
+  color: var(--color-on-surface);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+}
+
+.challenge-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.challenge-score {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+.atlas-attribution {
+  font-size: var(--text-label-sm);
+  color: var(--color-on-surface-subtle);
+  line-height: 1.4;
+  text-align: left;
+  padding: 0 var(--space-1);
+}
+
+/* ==========================================================================
+   BOTTOM TIMELINE SCRUBBER BAR (00:03 - 00:09, 00:28 in video)
+   ========================================================================== */
+
+.hud-bottom-timeline {
+  position: absolute;
+  left: var(--space-6);
+  right: var(--space-6);
+  bottom: var(--space-4);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.timeline-helper-text {
+  text-align: center;
+  font-size: var(--text-body-md);
+  font-weight: 600;
+  color: var(--color-on-surface-muted);
+  text-shadow: 0 2px 6px var(--color-background);
+}
+
+.timeline-bar-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3) var(--space-4);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.play-timeline-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-glow-blue);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.play-timeline-btn:hover {
+  background: var(--color-primary-variant);
+  transform: scale(1.04);
+}
+
+.play-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.timeline-track-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  position: relative;
+}
+
+.timeline-era-labels {
+  display: flex;
+  width: 100%;
+  font-size: var(--text-label-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-on-surface-muted);
+  text-transform: uppercase;
+}
+
+.era-label {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s ease;
+}
+
+.era-label.is-active {
+  color: var(--color-on-surface);
+}
+
+.timeline-segmented-bar {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  border-radius: var(--radius-full);
+  display: flex;
+  overflow: visible;
+  cursor: pointer;
+}
+
+.era-segment {
+  height: 100%;
+  transition: filter 0.15s ease;
+}
+
+.seg-ancient {
+  background: var(--era-ancient);
+  border-top-left-radius: var(--radius-full);
+  border-bottom-left-radius: var(--radius-full);
+}
+
+.seg-classical {
+  background: var(--era-classical);
+}
+
+.seg-medieval {
+  background: var(--era-medieval);
+}
+
+.seg-early-modern {
+  background: var(--era-early-modern);
+}
+
+.seg-modern {
+  background: var(--era-modern);
+  border-top-right-radius: var(--radius-full);
+  border-bottom-right-radius: var(--radius-full);
+}
+
+.timeline-event-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.timeline-event-dot {
+  position: absolute;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-on-surface);
+  transform: translate(-50%, -50%);
+  opacity: 0.55;
+}
+
+.timeline-thumb {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-on-surface);
+  border: 3px solid var(--color-background);
+  box-shadow: 0 0 12px var(--color-on-surface);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.timeline-thumb-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-outline-strong);
+  color: var(--color-on-surface);
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.timeline-segmented-bar:hover .timeline-thumb-tooltip {
+  opacity: 1;
+}
+
+.timeline-range-input {
+  position: absolute;
+  inset: -12px 0;
+  width: 100%;
+  height: 34px;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.timeline-ticks {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 600;
+  color: var(--color-on-surface-subtle);
+}
+
+.timeline-ticks span {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.timeline-ticks span:first-child {
+  transform: translateX(0);
+}
+
+.timeline-ticks span:last-child {
+  transform: translateX(-100%);
+}
+
+.speed-pill-btn {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-outline);
+  color: var(--color-on-surface);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.speed-pill-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-outline-strong);
+}
+
+/* Custom Subtle Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-strong);
+  border-radius: var(--radius-full);
+}
+
+@media (max-width: 960px) {
+  .hud-right-column {
+    width: 340px;
+    top: auto;
+    bottom: 112px;
+    max-height: 52vh;
+  }
+
+  .year-number {
+    font-size: var(--text-display-md);
+  }
+
+  .quick-years-row {
+    display: none;
+  }
+}

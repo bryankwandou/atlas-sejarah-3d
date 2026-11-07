@@ -1,0 +1,134 @@
+/* ==========================================================================
+   DESIGN TOKENS — SINGLE SOURCE OF TRUTH
+   Compliant with Design System Standards (Dark & Light Mode definitions)
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  /* Core Semantic Palette */
+  --color-primary: #3b82f6;
+  --color-primary-variant: #2563eb;
+  --color-secondary: #f59e0b;
+  --color-background: #05070e;
+  --color-surface: rgba(16, 20, 32, 0.86);
+  --color-surface-elevated: rgba(24, 30, 46, 0.92);
+  --color-surface-subtle: rgba(255, 255, 255, 0.06);
+  --color-surface-hover: rgba(255, 255, 255, 0.12);
+  --color-on-primary: #ffffff;
+  --color-on-surface: #f8fafc;
+  --color-on-surface-muted: #94a3b8;
+  --color-on-surface-subtle: #64748b;
+  --color-error: #ef4444;
+  --color-on-error: #ffffff;
+  --color-success: #10b981;
+  --color-outline: rgba(255, 255, 255, 0.12);
+  --color-outline-strong: rgba(255, 255, 255, 0.24);
+
+  /* Historical Era Accent Tokens (matching video timeline segments & badges) */
+  --era-ancient: #ef4444;
+  --era-ancient-bg: rgba(239, 68, 68, 0.22);
+  --era-classical: #f59e0b;
+  --era-classical-bg: rgba(245, 158, 11, 0.22);
+  --era-medieval: #10b981;
+  --era-medieval-bg: rgba(16, 185, 129, 0.22);
+  --era-early-modern: #06b6d4;
+  --era-early-modern-bg: rgba(6, 182, 212, 0.22);
+  --era-modern: #a855f7;
+  --era-modern-bg: rgba(168, 85, 247, 0.24);
+
+  /* GlobeMarker & Pin Tokens */
+  --pin-bg: rgba(13, 17, 28, 0.92);
+  --pin-border: rgba(255, 255, 255, 0.18);
+  --pin-badge-amber: #f59e0b;
+  --pin-badge-text: #090b10;
+  --shadow-elevated: 0 20px 44px rgba(0, 0, 0, 0.65);
+  --shadow-glow-blue: 0 0 28px rgba(59, 130, 246, 0.45);
+
+  /* 3D Earth Biome & Atmosphere Palette Tokens */
+  --globe-space-bg: #05070e;
+  --globe-ocean-deep: #040d24;
+  --globe-ocean-mid: #0a1f4a;
+  --globe-ocean-shallow: #133c82;
+  --globe-coast-glow: #1d4ed8;
+  --globe-land-forest: #3d7a47;
+  --globe-land-tropical: #35854b;
+  --globe-land-plains: #6b8e4e;
+  --globe-land-steppe: #b39256;
+  --globe-land-desert: #df9c57;
+  --globe-land-highland: #9c7a54;
+  --globe-land-tundra: #7a8b8b;
+  --globe-atmosphere: #3b82f6;
+  --globe-atmosphere-rim: #6366f1;
+  --globe-star-primary: #e2e8f0;
+  --globe-star-accent: #93c5fd;
+
+  /* Historical Polity Territory Color Tokens */
+  --polity-coral: #f97316;
+  --polity-crimson: #ef4444;
+  --polity-rose: #ec4899;
+  --polity-purple: #a855f7;
+  --polity-violet: #8b5cf6;
+  --polity-indigo: #6366f1;
+  --polity-blue: #3b82f6;
+  --polity-sky: #0ea5e9;
+  --polity-cyan: #06b6d4;
+  --polity-teal: #14b8a6;
+  --polity-emerald: #10b981;
+  --polity-lime: #84cc16;
+  --polity-amber: #f59e0b;
+  --polity-gold: #eab308;
+  --polity-terracotta: #ea580c;
+  --polity-magenta: #d946ef;
+
+  /* Typography Families (Strictly 2 Font Families) */
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Typography Scale (Strict multiples: 12, 14, 16, 18, 20, 24, 28, 32, 40, 48) */
+  --text-label-sm: 12px;
+  --text-body-md: 14px;
+  --text-body-lg: 16px;
+  --text-title-sm: 18px;
+  --text-title-md: 20px;
+  --text-headline-sm: 24px;
+  --text-headline-md: 28px;
+  --text-headline-lg: 32px;
+  --text-display-md: 40px;
+  --text-display-lg: 48px;
+
+  /* Spacing Scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Border Radius Tokens */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+}
+
+[data-theme="light"] {
+  --color-primary: #2563eb;
+  --color-primary-variant: #1d4ed8;
+  --color-secondary: #d97706;
+  --color-background: #0b1120;
+  --color-surface: rgba(255, 255, 255, 0.9);
+  --color-surface-elevated: rgba(248, 250, 252, 0.96);
+  --color-surface-subtle: rgba(15, 23, 42, 0.06);
+  --color-surface-hover: rgba(15, 23, 42, 0.12);
+  --color-on-primary: #ffffff;
+  --color-on-surface: #0f172a;
+  --color-on-surface-muted: #475569;
+  --color-on-surface-subtle: #64748b;
+  --color-error: #dc2626;
+  --color-on-error: #ffffff;
+  --color-success: #059669;
+  --color-outline: rgba(15, 23, 42, 0.14);
+  --color-outline-strong: rgba(15, 23, 42, 0.26);
+}

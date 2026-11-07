@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Atlas Sejarah — Simulasi Perbatasan &amp; Peradaban Dunia 5.000 Tahun</title>
+    <meta
+      name="description"
+      content="Atlas Sejarah interaktif 3D: jelajahi perubahan perbatasan kekaisaran, kerajaan maritim Nusantara, pertempuran bersejarah, dan kisah peradaban dunia dari 3000 SM hingga 2024 M."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app" class="atlas-app">
+      <!-- 3D WebGL Globe Canvas Container -->
+      <div id="globe-viewport" class="globe-viewport" aria-label="Bola Dunia Interaktif Atlas Sejarah"></div>
+
+      <!-- Projected 3D Labels & Event Markers Overlay -->
+      <div id="globe-overlay" class="globe-overlay" aria-live="polite">
+        <div id="territory-labels-layer" class="territory-labels-layer"></div>
+        <div id="event-markers-layer" class="event-markers-layer"></div>
+      </div>
+
+      <!-- Center-Top Floating Era Toast (as shown at 00:08 in video) -->
+      <div id="era-toast" class="era-toast" role="status" aria-live="polite">
+        <div id="era-toast-title" class="era-toast-title">Abad Pertengahan</div>
+        <div id="era-toast-range" class="era-toast-range">500 M – 1499 M</div>
+      </div>
+
+      <!-- Top-Left HUD: Title, Year Counter, Action Buttons, Era Pill, Step Controls -->
+      <header class="hud-top-left">
+        <div class="brand-row">
+          <div class="brand-globe-badge" aria-hidden="true">
+            <canvas id="mini-globe-canvas" width="44" height="44"></canvas>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">Atlas Sejarah</h1>
+            <p class="brand-subtitle">SEJARAH &bull; SIMULASI</p>
+          </div>
+        </div>
+
+        <div class="year-control-row">
+          <div class="year-display" id="year-display" aria-label="Tahun terpilih">
+            <span id="year-number" class="year-number">682</span>
+            <span id="year-suffix" class="year-suffix">M</span>
+          </div>
+
+          <div class="hud-action-group" role="toolbar" aria-label="Alat tampilan peta">
+            <button
+              type="button"
+              id="btn-kisah"
+              class="hud-pill-btn"
+              aria-expanded="false"
+              aria-controls="panel-kisah"
+            >
+              <svg class="hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"></path>
+                <path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"></path>
+              </svg>
+              <span>Kisah</span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-toggle-events"
+              class="hud-circle-btn is-active"
+              aria-pressed="true"
+              data-tooltip="Tampilkan peristiwa dan pertempuran"
+              aria-label="Tampilkan peristiwa dan pertempuran"
+            >
+              <svg class="hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"></polyline>
+                <line x1="13" y1="19" x2="19" y2="13"></line>
+                <line x1="16" y1="16" x2="20" y2="20"></line>
+                <line x1="19" y1="21" x2="21" y2="19"></line>
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              id="btn-toggle-leaderboard"
+              class="hud-circle-btn is-active"
+              aria-pressed="true"
+              data-tooltip="Negara terbesar pada tahun ini"
+              aria-label="Negara terbesar pada tahun ini"
+            >
+              <svg class="hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="era-badge-row">
+          <span id="active-era-pill" class="era-pill" data-era="medieval">ABAD PERTENGAHAN</span>
+        </div>
+
+        <div class="step-nav-row" role="group" aria-label="Navigasi lompatan tahun">
+          <button type="button" id="btn-step-back-major" class="step-btn" aria-label="Mundur satu era atau 50 tahun" title="Mundur jauh">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <polyline points="11 17 6 12 11 7"></polyline>
+              <polyline points="18 17 13 12 18 7"></polyline>
+            </svg>
+          </button>
+          <button type="button" id="btn-step-back" class="step-btn" aria-label="Mundur ke tahun peristiwa sebelumnya" title="Sebelumnya">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button type="button" id="btn-step-forward" class="step-btn" aria-label="Maju ke tahun peristiwa berikutnya" title="Berikutnya">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+          <button type="button" id="btn-step-forward-major" class="step-btn" aria-label="Maju satu era atau 50 tahun" title="Maju jauh">
+            <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <polyline points="13 17 18 12 13 7"></polyline>
+              <polyline points="6 17 11 12 6 7"></polyline>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Quick Landmark Year Chips for instant demonstration -->
+        <div class="quick-years-row" aria-label="Tahun populer">
+          <button type="button" class="quick-year-chip" data-year="-509">509 SM</button>
+          <button type="button" class="quick-year-chip" data-year="622">622 M</button>
+          <button type="button" class="quick-year-chip is-selected" data-year="682">682 M &bull; Sriwijaya</button>
+          <button type="button" class="quick-year-chip" data-year="1279">1279 M</button>
+          <button type="button" class="quick-year-chip" data-year="1350">1350 M &bull; Majapahit</button>
+          <button type="button" class="quick-year-chip" data-year="1600">1600 M</button>
+          <button type="button" class="quick-year-chip" data-year="1818">1818 M</button>
+          <button type="button" class="quick-year-chip" data-year="1942">1942 M</button>
+          <button type="button" class="quick-year-chip" data-year="2024">2024 M</button>
+        </div>
+      </header>
+
+      <!-- Top-Right Navigation Mode Tabs & Right Side Panels (00:28 - 00:45 in video) -->
+      <aside class="hud-right-column" aria-label="Panel informasi dan mode eksplorasi">
+        <nav class="mode-tabs" role="tablist" aria-label="Mode Atlas Sejarah">
+          <button type="button" role="tab" aria-selected="true" class="mode-tab is-active" data-mode="jelajahi">
+            JELAJAHI
+          </button>
+          <button type="button" role="tab" aria-selected="false" class="mode-tab" data-mode="siapa-berkuasa">
+            SIAPA BERKUASA?
+          </button>
+          <button type="button" role="tab" aria-selected="false" class="mode-tab" data-mode="tahun-berapa">
+            TAHUN BERAPA?
+          </button>
+          <button type="button" role="tab" aria-selected="false" class="mode-tab" data-mode="harian">
+            HARIAN
+          </button>
+        </nav>
+
+        <!-- Dynamic Stack of Right-Side Cards -->
+        <div class="right-panels-stack">
+          <!-- 1. Event / Inscription Detail Card (00:28 - 00:31 in video: "Bangkitnya Sriwijaya") -->
+          <section id="card-event-detail" class="glass-card event-detail-card" aria-labelledby="event-card-title">
+            <div class="card-top-bar">
+              <div class="event-category-badge" id="event-card-badge">
+                <svg class="badge-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                  <line x1="4" y1="22" x2="4" y2="15" stroke="currentColor" stroke-width="2"></line>
+                </svg>
+                <span id="event-card-category">PENDIRIAN &bull; 682 M</span>
+              </div>
+              <button type="button" id="btn-close-event" class="card-close-btn" aria-label="Tutup detail peristiwa">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <h2 id="event-card-title" class="event-card-title">Bangkitnya Sriwijaya</h2>
+            <p id="event-card-desc" class="event-card-desc">
+              Pada 682 M, sebuah prasasti batu mencatat penguasa Sriwijaya memimpin ekspedisi di Palembang, menandai awal kerajaan maritim besar di Sumatra.
+            </p>
+
+            <!-- High-Realism Archaeological / Primary Source Artifact Preview -->
+            <div id="event-artifact-box" class="event-artifact-box">
+              <div class="artifact-visual" id="artifact-visual">
+                <canvas id="artifact-canvas" width="96" height="96" aria-hidden="true"></canvas>
+              </div>
+              <div class="artifact-meta">
+                <div class="artifact-label" id="artifact-label">BUKTI ARKEOLOGIS &bull; PRASASTI KEDUKAN BUKIT</div>
+                <div class="artifact-title" id="artifact-title">605 Saka (16 Juni 682 M) &bull; Aksara Pallawa, Bahasa Melayu Kuno</div>
+                <div class="artifact-quote" id="artifact-quote">
+                  &ldquo;Swasti sri sakawarsatita 605 ekadasi suklapaksa wulan Waisakha dapunta hyang nayik di samwau mangalap siddhayatra...&rdquo;
+                </div>
+              </div>
+            </div>
+
+            <div class="event-card-actions">
+              <button type="button" id="btn-jump-event-year" class="btn-jump-year">
+                Ke tahun 682 M
+              </button>
+              <button type="button" id="btn-focus-event-globe" class="btn-secondary-action">
+                Pusatkan Peta
+              </button>
+            </div>
+          </section>
+
+          <!-- 2. "Kisah" Historical Narratives Drawer (00:32 - 00:40 in video) -->
+          <section id="panel-kisah" class="glass-card kisah-card is-hidden" aria-labelledby="kisah-heading">
+            <div class="card-top-bar">
+              <h2 id="kisah-heading" class="panel-heading">Kisah</h2>
+              <button type="button" id="btn-close-kisah" class="card-close-btn" aria-label="Tutup panel Kisah">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div id="kisah-list" class="kisah-list" role="list"></div>
+          </section>
+
+          <!-- 3. Interactive Quiz / Challenge Card (for SIAPA BERKUASA?, TAHUN BERAPA?, HARIAN tabs) -->
+          <section id="panel-challenge" class="glass-card challenge-card is-hidden" aria-labelledby="challenge-heading">
+            <div class="card-top-bar">
+              <div class="event-category-badge">
+                <span id="challenge-mode-badge">TANTANGAN ATLAS</span>
+              </div>
+              <button type="button" id="btn-close-challenge" class="card-close-btn" aria-label="Kembali ke mode Jelajahi">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <h2 id="challenge-heading" class="event-card-title">Siapa Berkuasa di Wilayah Ini?</h2>
+            <p id="challenge-prompt" class="event-card-desc"></p>
+            <div id="challenge-options" class="challenge-options"></div>
+            <div id="challenge-feedback" class="challenge-feedback is-hidden"></div>
+            <div class="challenge-footer">
+              <span id="challenge-score" class="challenge-score">Skor: 0 / 0</span>
+              <button type="button" id="btn-next-challenge" class="btn-jump-year">Soal Berikutnya</button>
+            </div>
+          </section>
+
+          <!-- 4. "Negara terbesar pada [Tahun]" Leaderboard Card (00:41 - 00:45 in video) -->
+          <section id="panel-leaderboard" class="glass-card leaderboard-card" aria-labelledby="leaderboard-heading">
+            <div class="card-top-bar">
+              <h2 id="leaderboard-heading" class="leaderboard-heading">Negara terbesar pada 682 M</h2>
+              <button type="button" id="btn-close-leaderboard" class="card-close-btn" aria-label="Sembunyikan daftar negara terbesar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <ul id="leaderboard-list" class="leaderboard-list" aria-label="Peringkat luas wilayah kekaisaran"></ul>
+          </section>
+
+          <!-- Attribution Footer Note (00:29, 00:42 in video) -->
+          <p class="atlas-attribution">
+            Batas wilayah: Cliopatria (Seshat Global History Databank), CC BY 4.0. Disederhanakan untuk peta ini; garis pantai modern dari Natural Earth.
+          </p>
+        </div>
+      </aside>
+
+      <!-- Bottom Timeline Scrubber Bar (00:03 - 00:09, 00:28 in video) -->
+      <footer class="hud-bottom-timeline" aria-label="Garis waktu sejarah 5.000 tahun">
+        <p id="timeline-helper-text" class="timeline-helper-text">
+          Tekan putar untuk melihat perubahan perbatasan selama 5.000 tahun.
+        </p>
+
+        <div class="timeline-bar-container">
+          <button
+            type="button"
+            id="btn-play-timeline"
+            class="play-timeline-btn"
+            aria-label="Putar simulasi garis waktu"
+            aria-pressed="false"
+          >
+            <svg id="icon-play" class="play-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <polygon points="6 4 20 12 6 20 6 4"></polygon>
+            </svg>
+            <svg id="icon-pause" class="play-icon is-hidden" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+              <rect x="14" y="4" width="4" height="16" rx="1"></rect>
+            </svg>
+          </button>
+
+          <div class="timeline-track-wrapper" id="timeline-track-wrapper">
+            <!-- Era Labels Row -->
+            <div class="timeline-era-labels" aria-hidden="true">
+              <span class="era-label" style="width: 24%;" data-era="ancient">ZAMAN KUNO</span>
+              <span class="era-label" style="width: 20%;" data-era="classical">ZAMAN KLASIK</span>
+              <span class="era-label" style="width: 22%;" data-era="medieval">ABAD PERTENGAHAN</span>
+              <span class="era-label" style="width: 17%;" data-era="early-modern">AWAL ZAMAN MODERN</span>
+              <span class="era-label" style="width: 17%;" data-era="modern">ZAMAN MODERN</span>
+            </div>
+
+            <!-- Colored Segmented Bar + Interactive Scrubber -->
+            <div class="timeline-segmented-bar" id="timeline-segmented-bar">
+              <div class="era-segment seg-ancient" style="width: 24%;"></div>
+              <div class="era-segment seg-classical" style="width: 20%;"></div>
+              <div class="era-segment seg-medieval" style="width: 22%;"></div>
+              <div class="era-segment seg-early-modern" style="width: 17%;"></div>
+              <div class="era-segment seg-modern" style="width: 17%;"></div>
+
+              <!-- Event tick dots along timeline -->
+              <div id="timeline-event-dots" class="timeline-event-dots" aria-hidden="true"></div>
+
+              <!-- Draggable Thumb -->
+              <div id="timeline-thumb" class="timeline-thumb" style="left: 58.6%;">
+                <div id="timeline-thumb-tooltip" class="timeline-thumb-tooltip">682 M</div>
+              </div>
+
+              <!-- Accessible Range Input Overlay -->
+              <input
+                type="range"
+                id="timeline-range-input"
+                class="timeline-range-input"
+                min="0"
+                max="1000"
+                step="1"
+                value="586"
+                aria-label="Geser tahun sejarah dari 3000 SM hingga 2024 M"
+              />
+            </div>
+
+            <!-- Year Ticks Row -->
+            <div class="timeline-ticks" aria-hidden="true">
+              <span style="left: 0%;">3000 SM</span>
+              <span style="left: 14%;">1500 SM</span>
+              <span style="left: 24%;">500 SM</span>
+              <span style="left: 34%;">1 M</span>
+              <span style="left: 44%;">500 M</span>
+              <span style="left: 55%;">1000 M</span>
+              <span style="left: 66%;">1500 M</span>
+              <span style="left: 83%;">1800 M</span>
+              <span style="left: 92%;">1945 M</span>
+              <span style="left: 100%;">2024 M</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            id="btn-speed"
+            class="speed-pill-btn"
+            aria-label="Kecepatan pemutaran garis waktu"
+            title="Ubah kecepatan simulasi"
+          >
+            &times;1
+          </button>
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
