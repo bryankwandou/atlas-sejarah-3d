@@ -85,8 +85,8 @@
             <button
               type="button"
               id="btn-toggle-leaderboard"
-              class="hud-circle-btn is-active"
-              aria-pressed="true"
+              class="hud-circle-btn"
+              aria-pressed="false"
               data-tooltip="Negara terbesar pada tahun ini"
               aria-label="Negara terbesar pada tahun ini"
             >
@@ -184,7 +184,7 @@
       <aside class="hud-right-column" aria-label="Panel informasi dan mode interaktif">
         <div class="right-panels-stack">
           <!-- 1. Event Detail Card (00:28 - 00:31 in video: "Bangkitnya Sriwijaya") -->
-          <section id="card-event-detail" class="glass-card event-detail-card" aria-labelledby="event-card-title">
+          <section id="card-event-detail" class="glass-card event-detail-card is-hidden" aria-labelledby="event-card-title">
             <div class="card-top-bar">
               <div class="event-category-badge" id="event-card-badge">
                 <svg class="badge-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -288,7 +288,7 @@
           </section>
 
           <!-- 4. "Negara terbesar pada [Tahun]" Leaderboard Card (00:41 - 00:45 in video) -->
-          <section id="panel-leaderboard" class="glass-card leaderboard-card" aria-labelledby="leaderboard-heading">
+          <section id="panel-leaderboard" class="glass-card leaderboard-card is-hidden" aria-labelledby="leaderboard-heading">
             <div class="card-top-bar">
               <h2 id="leaderboard-heading" class="leaderboard-heading">Negara terbesar pada 622 M</h2>
               <button type="button" id="btn-close-leaderboard" class="card-close-btn" aria-label="Sembunyikan daftar negara terbesar">
@@ -335,10 +335,10 @@
             <!-- Era Labels Row -->
             <div class="timeline-era-labels" aria-hidden="true">
               <span class="era-label" style="width: 24%;" data-era="ancient">ZAMAN KUNO</span>
-              <span class="era-label" style="width: 20%;" data-era="classical">ZAMAN KLASIK</span>
-              <span class="era-label" style="width: 22%;" data-era="medieval">ABAD PERTENGAHAN</span>
-              <span class="era-label" style="width: 17%;" data-era="early-modern">AWAL ZAMAN MODERN</span>
-              <span class="era-label" style="width: 17%;" data-era="modern">ZAMAN MODERN</span>
+              <span class="era-label" style="width: 20%;" data-era="classical">KLASIK</span>
+              <span class="era-label" style="width: 22%;" data-era="medieval">PERTENGAHAN</span>
+              <span class="era-label" style="width: 17%;" data-era="early-modern">AWAL MODERN</span>
+              <span class="era-label" style="width: 17%;" data-era="modern">MODERN</span>
             </div>
 
             <!-- Colored Segmented Bar + Interactive Scrubber -->
@@ -379,8 +379,7 @@
               <span style="left: 44%;">500 M</span>
               <span style="left: 55%;">1000 M</span>
               <span style="left: 66%;">1500 M</span>
-              <span style="left: 83%;">1800 M</span>
-              <span style="left: 92%;">1945 M</span>
+              <span style="left: 82%;">1800 M</span>
               <span style="left: 100%;">2024 M</span>
             </div>
           </div>

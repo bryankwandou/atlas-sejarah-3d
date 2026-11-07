@@ -313,9 +313,9 @@ function initAtlasApp(): void {
     currentYear: 682,
     currentEraId: "medieval",
     showEvents: true,
-    showLeaderboard: true,
+    showLeaderboard: false,
     showKisah: false,
-    selectedEvent: sriwijayaEvent,
+    selectedEvent: null,
     selectedPolity: null,
     activeMode: "jelajahi",
     isPlaying: false,
@@ -634,9 +634,9 @@ function initAtlasApp(): void {
         el.style.opacity = "0";
         el.style.pointerEvents = "none";
       } else {
-        const opacity = Math.min(1, (proj.facingRatio - 0.18) * 2.4);
+        const opacity = Math.min(1, (proj.facingRatio - 0.38) * 3.6);
         el.style.opacity = String(opacity.toFixed(2));
-        el.style.pointerEvents = opacity > 0.35 ? "auto" : "none";
+        el.style.pointerEvents = opacity > 0.4 ? "auto" : "none";
         el.style.transform = `translate3d(${proj.x.toFixed(1)}px, ${proj.y.toFixed(1)}px, 0) translate(-50%, -50%)`;
       }
     }
@@ -651,9 +651,9 @@ function initAtlasApp(): void {
           el.style.opacity = "0";
           el.style.pointerEvents = "none";
         } else {
-          const opacity = Math.min(1, (proj.facingRatio - 0.16) * 2.8);
+          const opacity = Math.min(1, (proj.facingRatio - 0.35) * 3.6);
           el.style.opacity = String(opacity.toFixed(2));
-          el.style.pointerEvents = opacity > 0.35 ? "auto" : "none";
+          el.style.pointerEvents = opacity > 0.4 ? "auto" : "none";
           el.style.transform = `translate3d(${proj.x.toFixed(1)}px, ${proj.y.toFixed(1)}px, 0) translate(-14px, -50%)`;
         }
       }

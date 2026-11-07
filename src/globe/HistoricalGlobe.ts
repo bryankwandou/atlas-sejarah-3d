@@ -5,7 +5,6 @@ import {
   getActiveEventsForYear,
   getActivePolitiesForYear,
   type HistoricalEventItem,
-  type PolityTerritory,
 } from "../data/historyData";
 import { getTokenColor } from "../theme/designTokens";
 
@@ -30,23 +29,21 @@ export class HistoricalGlobe {
   private earthMesh!: THREE.Mesh;
   private territoryMesh!: THREE.Mesh;
   private atmosphereMesh!: THREE.Mesh;
+  private cloudsMesh!: THREE.Mesh;
   private eventRingsGroup: THREE.Group;
 
-  // Offscreen canvases for high-res Earth & dynamic historical territories
   private baseCanvas: HTMLCanvasElement;
   private landMaskCanvas: HTMLCanvasElement;
   private territoryCanvas: HTMLCanvasElement;
   private territoryTexture: THREE.CanvasTexture;
 
-  // Camera spherical orbit state
-  private targetLat = 8.0;
-  private targetLng = 82.0;
-  private currentLat = 8.0;
-  private currentLng = 82.0;
-  private targetDistance = 2.85;
-  private currentDistance = 2.85;
+  private targetLat = 4.0;
+  private targetLng = 96.0;
+  private currentLat = 4.0;
+  private currentLng = 96.0;
+  private targetDistance = 2.45;
+  private currentDistance = 2.45;
 
-  // Pointer drag state
   private isDragging = false;
   private pointerDownX = 0;
   private pointerDownY = 0;
@@ -70,7 +67,7 @@ export class HistoricalGlobe {
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+    this.camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
       alpha: false,
@@ -79,7 +76,7 @@ export class HistoricalGlobe {
     this.renderer.setSize(width, height);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.12;
+    this.renderer.toneMappingExposure = 1.08;
     this.container.appendChild(this.renderer.domElement);
 
     this.globeGroup = new THREE.Group();
@@ -106,7 +103,7 @@ export class HistoricalGlobe {
 
     this.setupLighting();
     this.setupStarfield();
-    this.buildEarthBaseTextures();
+    this.buildRealisticEarthBaseTexture();
     this.setupGlobeMeshes();
     this.setupInteractionListeners();
 
@@ -132,31 +129,28 @@ export class HistoricalGlobe {
   }
 
   private setupLighting(): void {
-    const lightPrimary = new THREE.Color(getTokenColor("--color-on-primary"));
-    const lightAccent = new THREE.Color(getTokenColor("--color-primary"));
-
-    const ambientLight = new THREE.AmbientLight(lightPrimary, 1.55);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.25);
     this.scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(lightPrimary, 1.35);
-    sunLight.position.set(4, 2.5, 4);
+    const sunLight = new THREE.DirectionalLight(0xfff8ee, 1.6);
+    sunLight.position.set(4.5, 3.0, 4.0);
     this.scene.add(sunLight);
 
-    const rimLight = new THREE.DirectionalLight(lightAccent, 0.85);
-    rimLight.position.set(-4, -2, -3);
-    this.scene.add(rimLight);
+    const softFill = new THREE.DirectionalLight(0x4a6fa5, 0.55);
+    softFill.position.set(-4.0, -1.5, -2.5);
+    this.scene.add(softFill);
   }
 
   private setupStarfield(): void {
-    const starCount = 1800;
+    const starCount = 1400;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
 
-    const primaryColor = new THREE.Color(getTokenColor("--globe-star-primary"));
-    const accentColor = new THREE.Color(getTokenColor("--globe-star-accent"));
+    const white = new THREE.Color(0xf1f5f9);
+    const softBlue = new THREE.Color(0x93c5fd);
 
     for (let i = 0; i < starCount; i++) {
-      const r = 18 + Math.random() * 28;
+      const r = 20 + Math.random() * 30;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
 
@@ -164,11 +158,11 @@ export class HistoricalGlobe {
       positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = r * Math.cos(phi);
 
-      const mix = Math.random() > 0.75 ? accentColor : primaryColor;
-      const brightness = 0.45 + Math.random() * 0.55;
-      colors[i * 3] = mix.r * brightness;
-      colors[i * 3 + 1] = mix.g * brightness;
-      colors[i * 3 + 2] = mix.b * brightness;
+      const color = Math.random() > 0.8 ? softBlue : white;
+      const bright = 0.35 + Math.random() * 0.65;
+      colors[i * 3] = color.r * bright;
+      colors[i * 3 + 1] = color.g * bright;
+      colors[i * 3 + 2] = color.b * bright;
     }
 
     const starGeo = new THREE.BufferGeometry();
@@ -176,10 +170,10 @@ export class HistoricalGlobe {
     starGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
     const starMat = new THREE.PointsMaterial({
-      size: 0.08,
+      size: 0.07,
       vertexColors: true,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.8,
       sizeAttenuation: true,
     });
 
@@ -188,15 +182,18 @@ export class HistoricalGlobe {
   }
 
   /**
-   * Renders the Natural Earth coastline & physical biome relief texture + land mask.
+   * Generates a photorealistic NASA Blue Marble-style Earth texture with:
+   * - Deep oceanic bathymetry
+   * - Continental shelf turquoise shallow water fringe
+   * - Realistic biome landcover (lush tropical rainforests, Sahara/Arabian/Gobi warm desert sand, temperate plains, mountain shading)
+   * - Polar ice caps
    */
-  private buildEarthBaseTextures(): void {
+  private buildRealisticEarthBaseTexture(): void {
     const w = this.baseCanvas.width;
     const h = this.baseCanvas.height;
     const baseCtx = this.baseCanvas.getContext("2d")!;
     const maskCtx = this.landMaskCanvas.getContext("2d")!;
 
-    // 1. Decode Natural Earth land polygons from world-atlas
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const landGeo = feature(landTopology as any, (landTopology as any).objects.land) as any;
     const geometries: GeoPolygonGeometry[] =
@@ -228,56 +225,55 @@ export class HistoricalGlobe {
       }
     };
 
-    // 2. Render pure Land Mask for clipping historical territories to exact coastlines
+    // 1. Render Pure Land Mask
     maskCtx.clearRect(0, 0, w, h);
-    maskCtx.fillStyle = getTokenColor("--color-on-primary");
+    maskCtx.fillStyle = "#ffffff";
     traceLandPaths(maskCtx);
     maskCtx.fill();
 
-    // 3. Render Deep Bathymetric Ocean on Base Canvas
+    // 2. Deep Realistic Bathymetric Oceans
     const oceanGrad = baseCtx.createLinearGradient(0, 0, 0, h);
-    oceanGrad.addColorStop(0, getTokenColor("--globe-ocean-deep"));
-    oceanGrad.addColorStop(0.25, getTokenColor("--globe-ocean-mid"));
-    oceanGrad.addColorStop(0.5, getTokenColor("--globe-ocean-shallow"));
-    oceanGrad.addColorStop(0.75, getTokenColor("--globe-ocean-mid"));
-    oceanGrad.addColorStop(1, getTokenColor("--globe-ocean-deep"));
+    oceanGrad.addColorStop(0, "#08142c");
+    oceanGrad.addColorStop(0.25, "#0b1c3e");
+    oceanGrad.addColorStop(0.5, "#0d244f");
+    oceanGrad.addColorStop(0.75, "#0b1c3e");
+    oceanGrad.addColorStop(1, "#08142c");
     baseCtx.fillStyle = oceanGrad;
     baseCtx.fillRect(0, 0, w, h);
 
-    // 4. Render Glowing Continental Shelf Shallow Water Halo (matching 00:20 - 00:27 in video)
+    // 3. Glowing Continental Shelf Shallow Water (Sunda Shelf, North Sea, Caribbean)
     baseCtx.save();
-    baseCtx.shadowColor = getTokenColor("--globe-coast-glow");
-    baseCtx.shadowBlur = 26;
-    baseCtx.fillStyle = getTokenColor("--globe-ocean-shallow");
+    baseCtx.shadowColor = "#1d4ed8";
+    baseCtx.shadowBlur = 18;
+    baseCtx.fillStyle = "#163c78";
     traceLandPaths(baseCtx);
     baseCtx.fill();
     baseCtx.restore();
 
-    // 5. Render Biome-Shaded Physical Continents clipped to Land Mask
+    // 4. Photorealistic Biome Terrain on Land
     const biomeCanvas = document.createElement("canvas");
     biomeCanvas.width = w;
     biomeCanvas.height = h;
     const bCtx = biomeCanvas.getContext("2d")!;
 
-    // Base lush forest/plains green
-    bCtx.fillStyle = getTokenColor("--globe-land-forest");
+    // Base temperate vegetation (rich muted forest olive)
+    bCtx.fillStyle = "#2d4f34";
     bCtx.fillRect(0, 0, w, h);
 
-    // Equatorial tropical belt (Nusantara, Amazon, Central Africa)
-    const tropGrad = bCtx.createLinearGradient(0, h * 0.38, 0, h * 0.64);
+    // Equatorial Tropical Rainforest Belt (Nusantara, Central Africa, Amazon)
+    const tropGrad = bCtx.createLinearGradient(0, h * 0.40, 0, h * 0.62);
     tropGrad.addColorStop(0, "transparent");
-    tropGrad.addColorStop(0.5, getTokenColor("--globe-land-tropical"));
+    tropGrad.addColorStop(0.5, "#1e5b2c");
     tropGrad.addColorStop(1, "transparent");
     bCtx.fillStyle = tropGrad;
-    bCtx.fillRect(0, h * 0.38, w, h * 0.26);
+    bCtx.fillRect(0, h * 0.40, w, h * 0.22);
 
-    // Subtropical & Saharan / Arabian / Persian / Central Asian / Australian warm ochre deserts
-    const drawBiomeRegion = (
+    const drawDesertBiome = (
       lngCenter: number,
       latCenter: number,
       lngRadius: number,
       latRadius: number,
-      colorToken: string,
+      color: string,
       alpha: number
     ) => {
       const cx = ((lngCenter + 180) / 360) * w;
@@ -288,8 +284,8 @@ export class HistoricalGlobe {
       bCtx.save();
       bCtx.translate(cx, cy);
       bCtx.scale(1, ry / rx);
-      const grad = bCtx.createRadialGradient(0, 0, rx * 0.15, 0, 0, rx);
-      grad.addColorStop(0, getTokenColor(colorToken));
+      const grad = bCtx.createRadialGradient(0, 0, rx * 0.1, 0, 0, rx);
+      grad.addColorStop(0, color);
       grad.addColorStop(1, "transparent");
       bCtx.globalAlpha = alpha;
       bCtx.fillStyle = grad;
@@ -299,28 +295,43 @@ export class HistoricalGlobe {
       bCtx.restore();
     };
 
-    // Sahara, Arabia, Persia, Thar, Gobi, Taklamakan, Outback, SW North America
-    drawBiomeRegion(14, 24, 34, 14, "--globe-land-desert", 0.95);
-    drawBiomeRegion(45, 25, 22, 14, "--globe-land-desert", 0.95);
-    drawBiomeRegion(58, 32, 20, 12, "--globe-land-steppe", 0.88);
-    drawBiomeRegion(72, 42, 26, 12, "--globe-land-steppe", 0.85);
-    drawBiomeRegion(102, 42, 24, 11, "--globe-land-desert", 0.85);
-    drawBiomeRegion(88, 33, 16, 9, "--globe-land-highland", 0.9);
-    drawBiomeRegion(134, -24, 18, 11, "--globe-land-desert", 0.9);
-    drawBiomeRegion(-108, 34, 18, 12, "--globe-land-steppe", 0.8);
-    drawBiomeRegion(25, -24, 14, 10, "--globe-land-steppe", 0.78);
+    // Realistic desert & arid regions (Sahara, Arabia, Iran, Thar, Gobi, Outback, SW USA)
+    drawDesertBiome(16, 23, 34, 13, "#c99a5e", 0.96); // Sahara
+    drawDesertBiome(47, 24, 20, 13, "#d4a468", 0.96); // Arabia
+    drawDesertBiome(56, 32, 16, 10, "#ab8452", 0.88); // Iran / Mesopotamia
+    drawDesertBiome(72, 43, 24, 11, "#9e8253", 0.85); // Central Asian Steppes
+    drawDesertBiome(104, 42, 22, 10, "#c49f6b", 0.88); // Gobi / Taklamakan
+    drawDesertBiome(88, 33, 16, 8, "#7a6a58", 0.90); // Tibetan Plateau
+    drawDesertBiome(133, -24, 18, 10, "#bd7b4c", 0.90); // Australian Outback
+    drawDesertBiome(-107, 34, 16, 11, "#9e825a", 0.80); // American Southwest
+    drawDesertBiome(22, -26, 14, 9, "#b39462", 0.78); // Kalahari
 
-    // Clip biome canvas to exact Natural Earth land mask
+    // Polar snow/ice caps (Arctic & Antarctic)
+    const polarGradNorth = bCtx.createLinearGradient(0, 0, 0, h * 0.14);
+    polarGradNorth.addColorStop(0, "#e2e8f0");
+    polarGradNorth.addColorStop(0.8, "#cbd5e1");
+    polarGradNorth.addColorStop(1, "transparent");
+    bCtx.fillStyle = polarGradNorth;
+    bCtx.fillRect(0, 0, w, h * 0.14);
+
+    const polarGradSouth = bCtx.createLinearGradient(0, h * 0.86, 0, h);
+    polarGradSouth.addColorStop(0, "transparent");
+    polarGradSouth.addColorStop(0.2, "#cbd5e1");
+    polarGradSouth.addColorStop(1, "#f1f5f9");
+    bCtx.fillStyle = polarGradSouth;
+    bCtx.fillRect(0, h * 0.86, w, h * 0.14);
+
+    // Clip biome colors to exact Natural Earth continents
     bCtx.globalCompositeOperation = "destination-in";
     bCtx.drawImage(this.landMaskCanvas, 0, 0);
 
-    // Composite onto base Earth canvas
+    // Composite onto base ocean canvas
     baseCtx.drawImage(biomeCanvas, 0, 0);
 
-    // Subtle crisp coastline stroke
-    baseCtx.strokeStyle = getTokenColor("--globe-coast-glow");
-    baseCtx.lineWidth = 1.1;
-    baseCtx.globalAlpha = 0.55;
+    // Subtle natural coastline border
+    baseCtx.strokeStyle = "#38bdf8";
+    baseCtx.lineWidth = 0.8;
+    baseCtx.globalAlpha = 0.45;
     traceLandPaths(baseCtx);
     baseCtx.stroke();
     baseCtx.globalAlpha = 1.0;
@@ -334,55 +345,41 @@ export class HistoricalGlobe {
 
     const earthMat = new THREE.MeshStandardMaterial({
       map: baseTexture,
-      roughness: 0.68,
-      metalness: 0.08,
+      roughness: 0.65,
+      metalness: 0.12,
     });
 
     this.earthMesh = new THREE.Mesh(sphereGeo, earthMat);
     this.globeGroup.add(this.earthMesh);
 
-    // Historical Territory Overlay Sphere (slightly above Earth surface)
-    const territoryGeo = new THREE.SphereGeometry(this.GLOBE_RADIUS * 1.0025, 96, 96);
+    // Historical Territory Overlay Mesh
+    const territoryGeo = new THREE.SphereGeometry(this.GLOBE_RADIUS * 1.002, 96, 96);
     const territoryMat = new THREE.MeshBasicMaterial({
       map: this.territoryTexture,
       transparent: true,
-      opacity: 0.92,
+      opacity: 0.88,
       depthWrite: false,
     });
     this.territoryMesh = new THREE.Mesh(territoryGeo, territoryMat);
     this.globeGroup.add(this.territoryMesh);
 
-    // Volumetric Rayleigh Atmosphere Limb Glow Shader (matching video's sapphire/violet halo)
-    const atmosGeo = new THREE.SphereGeometry(this.GLOBE_RADIUS * 1.12, 64, 64);
-    const atmosColor = new THREE.Color(getTokenColor("--globe-atmosphere"));
-    const rimColor = new THREE.Color(getTokenColor("--globe-atmosphere-rim"));
-
+    // Realistic Delicate Atmospheric Rim Shader (NOT an opaque giant disc!)
+    const atmosGeo = new THREE.SphereGeometry(this.GLOBE_RADIUS * 1.025, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
-      uniforms: {
-        uColorInner: { value: atmosColor },
-        uColorOuter: { value: rimColor },
-      },
       vertexShader: `
         varying vec3 vNormal;
-        varying vec3 vViewPosition;
         void main() {
           vNormal = normalize(normalMatrix * normal);
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          vViewPosition = -mvPosition.xyz;
-          gl_Position = projectionMatrix * mvPosition;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }
       `,
       fragmentShader: `
-        uniform vec3 uColorInner;
-        uniform vec3 uColorOuter;
         varying vec3 vNormal;
-        varying vec3 vViewPosition;
         void main() {
-          vec3 viewDir = normalize(vViewPosition);
-          float fresnel = pow(0.68 - dot(vNormal, viewDir), 2.6);
-          fresnel = clamp(fresnel, 0.0, 1.0);
-          vec3 glow = mix(uColorInner, uColorOuter, fresnel);
-          gl_FragColor = vec4(glow, fresnel * 0.85);
+          float intensity = pow(0.72 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.8);
+          intensity = clamp(intensity, 0.0, 1.0);
+          vec3 atmosphereColor = vec3(0.24, 0.55, 0.98);
+          gl_FragColor = vec4(atmosphereColor, intensity * 0.75);
         }
       `,
       blending: THREE.AdditiveBlending,
@@ -396,8 +393,8 @@ export class HistoricalGlobe {
   }
 
   /**
-   * Redraws the historical empire territories on the 3D globe for the given year,
-   * clipped cleanly against the Natural Earth coastlines!
+   * Redraws historical empires on the 3D globe with authentic semi-transparent
+   * pastel/rich tints clipped to the real Natural Earth landmass.
    */
   public renderYearTerritories(year: number, highlightedPolityId: string | null = null): void {
     if (this.renderedYear === year && this.highlightedPolityId === highlightedPolityId) {
@@ -413,7 +410,6 @@ export class HistoricalGlobe {
 
     const activePolities = getActivePolitiesForYear(year);
 
-    // Draw each active polity polygon with smooth rounded joins
     ctx.save();
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
@@ -435,19 +431,17 @@ export class HistoricalGlobe {
       }
 
       ctx.fillStyle = color;
-      ctx.globalAlpha = isHighlighted ? 0.92 : 0.72;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = isHighlighted ? 28 : 14;
+      ctx.globalAlpha = isHighlighted ? 0.85 : 0.62;
       ctx.fill();
 
-      ctx.lineWidth = isHighlighted ? 5 : 2.5;
-      ctx.strokeStyle = isHighlighted ? getTokenColor("--color-on-primary") : color;
-      ctx.globalAlpha = 0.95;
+      ctx.lineWidth = isHighlighted ? 4.5 : 2.0;
+      ctx.strokeStyle = isHighlighted ? "#ffffff" : color;
+      ctx.globalAlpha = 0.9;
       ctx.stroke();
     }
     ctx.restore();
 
-    // Clip all territory fills against the real Natural Earth land mask so coastlines are razor-sharp!
+    // Clip territory polygons cleanly against Natural Earth land mask
     ctx.save();
     ctx.globalCompositeOperation = "destination-in";
     ctx.drawImage(this.landMaskCanvas, 0, 0);
@@ -464,12 +458,13 @@ export class HistoricalGlobe {
     }
 
     const activeEvents = getActiveEventsForYear(year);
-    const ringGeo = new THREE.RingGeometry(0.008, 0.015, 24);
-    const dotGeo = new THREE.CircleGeometry(0.006, 20);
+    const ringGeo = new THREE.RingGeometry(0.007, 0.014, 20);
+    const dotGeo = new THREE.CircleGeometry(0.005, 16);
     const amberColor = new THREE.Color(getTokenColor("--pin-badge-amber"));
+    const whiteColor = new THREE.Color(0xffffff);
 
     for (const ev of activeEvents) {
-      const pos = this.latLngToVector3(ev.lat, ev.lng, this.GLOBE_RADIUS * 1.006);
+      const pos = this.latLngToVector3(ev.lat, ev.lng, this.GLOBE_RADIUS * 1.005);
       const markerGroup = new THREE.Group();
       markerGroup.position.copy(pos);
       markerGroup.lookAt(pos.clone().multiplyScalar(2));
@@ -478,10 +473,10 @@ export class HistoricalGlobe {
         color: amberColor,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.85,
       });
       const dotMat = new THREE.MeshBasicMaterial({
-        color: new THREE.Color(getTokenColor("--color-on-primary")),
+        color: whiteColor,
         side: THREE.DoubleSide,
       });
 
@@ -501,7 +496,7 @@ export class HistoricalGlobe {
   }
 
   public projectLatLngToScreen(lat: number, lng: number): ScreenProjection {
-    const worldPos = this.latLngToVector3(lat, lng, this.GLOBE_RADIUS * 1.01);
+    const worldPos = this.latLngToVector3(lat, lng, this.GLOBE_RADIUS * 1.008);
     const camPos = this.camera.position.clone();
     const toCamera = camPos.clone().normalize();
     const normal = worldPos.clone().normalize();
@@ -517,7 +512,7 @@ export class HistoricalGlobe {
     return {
       x,
       y,
-      visible: facingRatio > 0.18,
+      visible: facingRatio > 0.38,
       facingRatio,
     };
   }
@@ -528,12 +523,8 @@ export class HistoricalGlobe {
     this.velocityLat = 0;
     this.velocityLng = 0;
     if (distance !== undefined) {
-      this.targetDistance = Math.max(1.65, Math.min(4.2, distance));
+      this.targetDistance = Math.max(1.7, Math.min(3.8, distance));
     }
-  }
-
-  public getCameraDistance(): number {
-    return this.currentDistance;
   }
 
   private setupInteractionListeners(): void {
@@ -557,7 +548,7 @@ export class HistoricalGlobe {
       this.lastPointerX = e.clientX;
       this.lastPointerY = e.clientY;
 
-      const sensitivity = 0.18 * (this.currentDistance / 2.8);
+      const sensitivity = 0.16 * (this.currentDistance / 2.6);
       this.targetLng -= dx * sensitivity;
       this.targetLat = Math.max(-75, Math.min(75, this.targetLat + dy * sensitivity));
 
@@ -581,8 +572,8 @@ export class HistoricalGlobe {
       "wheel",
       (e: WheelEvent) => {
         e.preventDefault();
-        const zoomStep = e.deltaY * 0.0014;
-        this.targetDistance = Math.max(1.62, Math.min(4.2, this.targetDistance + zoomStep));
+        const zoomStep = e.deltaY * 0.0012;
+        this.targetDistance = Math.max(1.7, Math.min(3.8, this.targetDistance + zoomStep));
       },
       { passive: false }
     );
@@ -619,7 +610,7 @@ export class HistoricalGlobe {
   private updateCameraPosition(): void {
     if (!this.isDragging) {
       if (this.autoRotate) {
-        this.targetLng += 0.08;
+        this.targetLng += 0.06;
       }
       this.targetLng += this.velocityLng;
       this.targetLat = Math.max(-75, Math.min(75, this.targetLat + this.velocityLat));
