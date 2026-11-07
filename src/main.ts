@@ -382,9 +382,8 @@ function initAtlasApp(): void {
       eventCardTitle.textContent = pol.name;
       eventCardDesc.textContent = pol.summary;
       artifactLabel.textContent = `IBU KOTA: ${pol.capital.toUpperCase()} \u2022 PEMIMPIN: ${pol.ruler}`;
-      artifactTitle.textContent = `Luas Puncak: ${formatAreaKm2(pol.peakAreaKm2)} (Tahun ${
-        formatYearLabel(pol.peakYear).full
-      })`;
+      artifactTitle.textContent = `Luas Puncak: ${formatAreaKm2(pol.peakAreaKm2)} (Tahun ${formatYearLabel(pol.peakYear).full
+        })`;
       artifactQuote.textContent = `Kedaulatan ${pol.name} dipetakan berdasarkan data geospasial Cliopatria (Seshat).`;
       btnJumpEventYear.textContent = `Ke puncak (${formatYearLabel(pol.peakYear).full})`;
       renderArtifactPreview(artifactCanvas, "seal", pol.colorToken);
@@ -820,14 +819,14 @@ function initAtlasApp(): void {
       mode === "harian"
         ? "TANTANGAN HARIAN ATLAS \u2022 STREAK 5 HARI"
         : mode === "siapa-berkuasa"
-        ? "KUIS PENGUASA WILAYAH"
-        : "KUIS KRONOLOGI SEJARAH";
+          ? "KUIS PENGUASA WILAYAH"
+          : "KUIS KRONOLOGI SEJARAH";
     challengeHeading.textContent =
       mode === "siapa-berkuasa"
         ? "Siapa Berkuasa di Wilayah Ini?"
         : mode === "tahun-berapa"
-        ? "Tahun Berapa Peta Ini?"
-        : "Tantangan Harian";
+          ? "Tahun Berapa Peta Ini?"
+          : "Tantangan Harian";
     challengePrompt.textContent = q.prompt;
 
     setYear(q.year, false);

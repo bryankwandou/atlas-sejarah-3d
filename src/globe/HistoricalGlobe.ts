@@ -37,12 +37,12 @@ export class HistoricalGlobe {
   private territoryCanvas: HTMLCanvasElement;
   private territoryTexture: THREE.CanvasTexture;
 
-  private targetLat = 4.0;
-  private targetLng = 96.0;
-  private currentLat = 4.0;
-  private currentLng = 96.0;
-  private targetDistance = 2.45;
-  private currentDistance = 2.45;
+  private targetLat = 18.0;
+  private targetLng = 55.0;
+  private currentLat = 18.0;
+  private currentLng = 55.0;
+  private targetDistance = 2.65;
+  private currentDistance = 2.65;
 
   private isDragging = false;
   private pointerDownX = 0;
