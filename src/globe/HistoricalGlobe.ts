@@ -57,6 +57,7 @@ export class HistoricalGlobe {
 
   private renderedYear: number | null = null;
   private highlightedPolityId: string | null = null;
+  private autoRotate = false;
   private onFrameCallback?: () => void;
   private onGlobeClickCallback?: (lat: number, lng: number) => void;
 
@@ -118,6 +119,16 @@ export class HistoricalGlobe {
 
   public setOnGlobeClick(cb: (lat: number, lng: number) => void): void {
     this.onGlobeClickCallback = cb;
+  }
+
+  public setAutoRotate(enabled: boolean): void {
+    this.autoRotate = enabled;
+  }
+
+  public setAtmosphereVisible(visible: boolean): void {
+    if (this.atmosphereMesh) {
+      this.atmosphereMesh.visible = visible;
+    }
   }
 
   private setupLighting(): void {
@@ -607,6 +618,9 @@ export class HistoricalGlobe {
 
   private updateCameraPosition(): void {
     if (!this.isDragging) {
+      if (this.autoRotate) {
+        this.targetLng += 0.08;
+      }
       this.targetLng += this.velocityLng;
       this.targetLat = Math.max(-75, Math.min(75, this.targetLat + this.velocityLat));
       this.velocityLng *= 0.92;

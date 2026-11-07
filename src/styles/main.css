@@ -60,7 +60,7 @@ body {
   pointer-events: none;
 }
 
-/* Floating Empire/Polity Name Labels on the 3D Globe (00:08 - 00:26 in video) */
+/* Floating Empire/Polity Name Labels on the 3D Globe */
 .globe-territory-label {
   position: absolute;
   left: 0;
@@ -68,28 +68,30 @@ body {
   transform: translate(-50%, -50%);
   pointer-events: auto;
   cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
   color: var(--color-on-surface);
   font-family: var(--font-sans);
   font-weight: 700;
   font-size: var(--text-body-md);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   text-align: center;
   white-space: nowrap;
   text-shadow:
-    0 2px 6px var(--color-background),
-    0 0 12px var(--color-background),
-    0 1px 2px var(--color-background);
+    0 2px 8px var(--color-background),
+    0 0 16px var(--color-background),
+    0 1px 3px var(--color-background);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
 }
 
 .globe-territory-label:hover {
   background: var(--color-surface);
-  border: 1px solid var(--color-outline-strong);
+  border-color: var(--color-outline-strong);
 }
 
-/* Interactive Event & Battle Pill Markers on the 3D Globe (00:14 - 00:27 in video) */
+/* Interactive Event & Battle Pill Markers on the 3D Globe */
 .globe-event-pin {
   position: absolute;
   left: 0;
@@ -109,7 +111,7 @@ body {
   font-size: var(--text-body-md);
   font-weight: 700;
   white-space: nowrap;
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(14px);
   transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
 }
 
@@ -117,6 +119,7 @@ body {
 .globe-event-pin.is-selected {
   border-color: var(--pin-badge-amber);
   background: var(--color-surface-elevated);
+  transform: translate(-14px, -50%) scale(1.06);
 }
 
 .globe-event-pin-badge {
@@ -137,20 +140,20 @@ body {
 }
 
 .globe-event-pin-label {
-  max-width: 210px;
+  max-width: 220px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 /* ==========================================================================
-   CENTER-TOP FLOATING ERA TOAST (00:08 in video: "Awal zaman modern / 1500 M - 1799 M")
+   CENTER-TOP FLOATING ERA TOAST (00:08 in video)
    ========================================================================== */
 
 .era-toast {
   position: absolute;
-  top: 14%;
+  top: 13%;
   left: 50%;
-  transform: translate(-50%, -12px);
+  transform: translate(-50%, -14px);
   z-index: 5;
   pointer-events: none;
   background: var(--color-surface-elevated);
@@ -158,7 +161,7 @@ body {
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-6);
   text-align: center;
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
   box-shadow: var(--shadow-elevated);
   opacity: 0;
   transition: opacity 0.28s ease, transform 0.28s ease;
@@ -185,7 +188,7 @@ body {
 }
 
 /* ==========================================================================
-   TOP-LEFT HUD (00:11 - 00:13, 00:46 - 00:52 in video)
+   TOP-LEFT HUD (00:11 - 00:13 in video)
    ========================================================================== */
 
 .hud-top-left {
@@ -312,7 +315,7 @@ body {
   box-shadow: 0 0 0 1px var(--color-primary);
 }
 
-/* Tooltip on hover (matching 00:13 in video: "Tampilkan peristiwa dan pertempuran") */
+/* Tooltip on hover */
 .hud-circle-btn[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -446,25 +449,20 @@ body {
 }
 
 /* ==========================================================================
-   RIGHT-SIDE HUD COLUMN: MODE TABS & GLASS CARDS (00:28 - 00:45 in video)
+   TOP-RIGHT NAVIGATION BAR (00:32 - 00:45 in video)
    ========================================================================== */
 
-.hud-right-column {
+.hud-top-right-nav {
   position: absolute;
   top: var(--space-5);
   right: var(--space-6);
-  bottom: 108px;
-  width: 410px;
-  max-width: calc(100vw - 32px);
   z-index: 6;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: var(--space-3);
-  pointer-events: none;
 }
 
 .mode-tabs {
-  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: var(--space-1);
@@ -473,7 +471,6 @@ body {
   border: 1px solid var(--color-outline);
   border-radius: var(--radius-full);
   backdrop-filter: blur(16px);
-  align-self: flex-end;
 }
 
 .mode-tab {
@@ -498,6 +495,83 @@ body {
 .mode-tab.is-active {
   background: var(--color-on-surface);
   color: var(--color-background);
+}
+
+.top-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nav-rate-btn {
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-rate-btn:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-outline-strong);
+}
+
+.nav-star-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-secondary);
+}
+
+.nav-menu-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline);
+  color: var(--color-on-surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(16px);
+  transition: background-color 0.15s ease;
+}
+
+.nav-menu-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.nav-menu-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==========================================================================
+   RIGHT-SIDE HUD COLUMN: MODE PANELS & GLASS CARDS
+   ========================================================================== */
+
+.hud-right-column {
+  position: absolute;
+  top: 76px;
+  right: var(--space-6);
+  bottom: 108px;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none;
 }
 
 .right-panels-stack {
@@ -589,7 +663,7 @@ body {
   color: var(--color-on-surface-muted);
 }
 
-/* Archaeological / Prasasti Inscription Box inside Event Card */
+/* Archaeological / Epigraphic Box */
 .event-artifact-box {
   display: flex;
   align-items: center;
@@ -692,11 +766,11 @@ body {
 }
 
 /* ==========================================================================
-   "KISAH" DRAWER (00:32 - 00:40 in video)
+   "KISAH" DRAWER & STORY PLAYER (00:32 - 00:40 in video)
    ========================================================================== */
 
 .kisah-card {
-  max-height: 440px;
+  max-height: 470px;
   overflow: hidden;
 }
 
@@ -778,12 +852,69 @@ body {
   flex-shrink: 0;
 }
 
+/* Story Player Mode */
+.story-player-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.story-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.btn-back-stories {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: none;
+  color: var(--color-secondary);
+  font-family: var(--font-sans);
+  font-size: var(--text-label-sm);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn-back-stories svg {
+  width: 16px;
+  height: 16px;
+}
+
+.story-player-progress {
+  font-family: var(--font-mono);
+  font-size: var(--text-label-sm);
+  font-weight: 700;
+  color: var(--color-on-surface-muted);
+}
+
+.story-chapter-title {
+  font-size: var(--text-title-sm);
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
+.story-chapter-desc {
+  font-size: var(--text-body-md);
+  line-height: 1.6;
+  color: var(--color-on-surface-muted);
+}
+
+.story-player-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
 /* ==========================================================================
    "NEGARA TERBESAR PADA [TAHUN]" LEADERBOARD CARD (00:41 - 00:45 in video)
    ========================================================================== */
 
 .leaderboard-card {
-  max-height: 280px;
+  max-height: 290px;
 }
 
 .leaderboard-heading {
@@ -848,7 +979,7 @@ body {
 }
 
 /* ==========================================================================
-   CHALLENGE / QUIZ PANEL
+   CHALLENGE / QUIZ PANEL (SIAPA BERKUASA?, TAHUN BERAPA?, HARIAN)
    ========================================================================== */
 
 .challenge-options {
@@ -918,7 +1049,7 @@ body {
 }
 
 /* ==========================================================================
-   BOTTOM TIMELINE SCRUBBER BAR (00:03 - 00:09, 00:28 in video)
+   BOTTOM TIMELINE SCRUBBER BAR (00:03 - 00:09 in video)
    ========================================================================== */
 
 .hud-bottom-timeline {
@@ -1156,6 +1287,92 @@ body {
   border-color: var(--color-outline-strong);
 }
 
+/* ==========================================================================
+   MODAL DIALOGS ("Beri Nilai" & "...")
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 420px;
+}
+
+.rating-stars-row {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+  margin: var(--space-2) 0;
+}
+
+.star-btn {
+  background: transparent;
+  border: none;
+  font-size: var(--text-headline-lg);
+  color: var(--color-outline-strong);
+  cursor: pointer;
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.star-btn.is-active,
+.star-btn:hover {
+  color: var(--color-secondary);
+  transform: scale(1.15);
+}
+
+.rating-toast-msg {
+  text-align: center;
+  font-weight: 700;
+  color: var(--color-success);
+  padding: var(--space-2);
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.setting-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: var(--text-body-md);
+  font-weight: 600;
+}
+
+.setting-toggle-row input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
+.settings-about-box {
+  border-top: 1px solid var(--color-outline);
+  padding-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-subtitle {
+  font-size: var(--text-title-sm);
+  font-weight: 800;
+  color: var(--color-on-surface);
+}
+
 /* Custom Subtle Scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
@@ -1171,11 +1388,19 @@ body {
 }
 
 @media (max-width: 960px) {
+  .hud-top-right-nav {
+    top: auto;
+    bottom: 120px;
+    right: var(--space-4);
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
   .hud-right-column {
     width: 340px;
     top: auto;
-    bottom: 112px;
-    max-height: 52vh;
+    bottom: 180px;
+    max-height: 48vh;
   }
 
   .year-number {

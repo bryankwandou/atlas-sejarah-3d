@@ -11,11 +11,14 @@ import {
   MAX_YEAR,
   MIN_YEAR,
   POLITIES,
+  QUIZ_QUESTIONS,
   sliderValueToYear,
   yearToSliderValue,
   type EraId,
   type HistoricalEventItem,
+  type KisahStory,
   type PolityTerritory,
+  type QuizQuestion,
 } from "./data/historyData";
 import { HistoricalGlobe } from "./globe/HistoricalGlobe";
 import { getTokenColor } from "./theme/designTokens";
@@ -31,8 +34,13 @@ interface AtlasState {
   activeMode: "jelajahi" | "siapa-berkuasa" | "tahun-berapa" | "harian";
   isPlaying: boolean;
   playbackSpeedIndex: number;
+  activeStory: KisahStory | null;
+  activeStoryChapterIndex: number;
+  currentQuizIndex: number;
   quizScore: number;
   quizTotal: number;
+  quizStreak: number;
+  ratingScore: number;
 }
 
 const PLAYBACK_SPEEDS = [1, 2, 5, 10];
@@ -91,6 +99,10 @@ function getKisahSvgIcon(iconType: string): string {
       return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
       </svg>`;
+    case "plane":
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z"></path>
+      </svg>`;
     default:
       return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
@@ -117,14 +129,12 @@ function renderMiniGlobeIcon(canvas: HTMLCanvasElement): void {
   ctx.arc(w / 2, h / 2, w * 0.44, 0, Math.PI * 2);
   ctx.fill();
 
-  // Continents silhouette
   ctx.fillStyle = getTokenColor("--globe-land-tropical");
   ctx.beginPath();
   ctx.ellipse(w * 0.44, h * 0.42, 8, 5, -0.3, 0, Math.PI * 2);
   ctx.ellipse(w * 0.62, h * 0.58, 6, 4, 0.4, 0, Math.PI * 2);
   ctx.fill();
 
-  // Rim highlight
   ctx.strokeStyle = getTokenColor("--color-primary");
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -143,7 +153,6 @@ function renderArtifactPreview(
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
 
-  // Dark museum pedestal backdrop
   const bgGrad = ctx.createRadialGradient(w / 2, h / 2, 6, w / 2, h / 2, w * 0.65);
   bgGrad.addColorStop(0, getTokenColor("--globe-ocean-mid"));
   bgGrad.addColorStop(1, getTokenColor("--color-background"));
@@ -153,7 +162,6 @@ function renderArtifactPreview(
   const accent = getTokenColor(accentColorToken);
 
   if (style === "inscription") {
-    // River boulder stone (Prasasti Kedukan Bukit / Epigraphic stele)
     ctx.save();
     ctx.translate(w / 2, h / 2);
     const stoneGrad = ctx.createRadialGradient(-10, -12, 4, 0, 0, 34);
@@ -174,7 +182,6 @@ function renderArtifactPreview(
     ctx.strokeStyle = accent;
     ctx.lineWidth = 1.4;
     ctx.globalAlpha = 0.85;
-    // Carved Pallawa script rows on the stone
     for (let row = -14; row <= 14; row += 7) {
       ctx.beginPath();
       for (let col = -15; col <= 15; col += 5) {
@@ -185,7 +192,6 @@ function renderArtifactPreview(
     }
     ctx.restore();
   } else if (style === "map") {
-    // Ancient nautical / cartographic chart
     ctx.save();
     ctx.fillStyle = getTokenColor("--globe-land-steppe");
     ctx.fillRect(14, 14, w - 28, h - 28);
@@ -193,7 +199,6 @@ function renderArtifactPreview(
     ctx.lineWidth = 1.5;
     ctx.strokeRect(14, 14, w - 28, h - 28);
 
-    // Compass rose rhumb lines
     ctx.beginPath();
     for (let a = 0; a < 8; a++) {
       const ang = (a * Math.PI) / 4;
@@ -203,7 +208,6 @@ function renderArtifactPreview(
     ctx.stroke();
     ctx.restore();
   } else {
-    // Imperial seal / historical chronicle tablet
     ctx.save();
     ctx.strokeStyle = accent;
     ctx.lineWidth = 2.2;
@@ -256,6 +260,14 @@ function initAtlasApp(): void {
   const kisahListEl = document.getElementById("kisah-list")!;
   const btnCloseKisah = document.getElementById("btn-close-kisah")!;
 
+  const storyPlayerView = document.getElementById("story-player-view")!;
+  const btnBackToStories = document.getElementById("btn-back-to-stories")!;
+  const storyPlayerProgress = document.getElementById("story-player-progress")!;
+  const storyChapterTitle = document.getElementById("story-chapter-title")!;
+  const storyChapterDesc = document.getElementById("story-chapter-desc")!;
+  const btnPrevChapter = document.getElementById("btn-prev-chapter")!;
+  const btnNextChapter = document.getElementById("btn-next-chapter")!;
+
   const panelLeaderboard = document.getElementById("panel-leaderboard")!;
   const leaderboardHeading = document.getElementById("leaderboard-heading")!;
   const leaderboardList = document.getElementById("leaderboard-list")!;
@@ -280,6 +292,18 @@ function initAtlasApp(): void {
   const timelineEventDots = document.getElementById("timeline-event-dots")!;
   const btnSpeed = document.getElementById("btn-speed")!;
 
+  const btnRateApp = document.getElementById("btn-rate-app")!;
+  const modalRating = document.getElementById("modal-rating")!;
+  const btnCloseModalRating = document.getElementById("btn-close-modal-rating")!;
+  const btnSubmitRating = document.getElementById("btn-submit-rating")!;
+  const ratingToastMsg = document.getElementById("rating-toast-msg")!;
+
+  const btnMoreMenu = document.getElementById("btn-more-menu")!;
+  const modalSettings = document.getElementById("modal-settings")!;
+  const btnCloseModalSettings = document.getElementById("btn-close-modal-settings")!;
+  const toggleAutorotate = document.getElementById("toggle-autorotate") as HTMLInputElement;
+  const toggleAtmosphere = document.getElementById("toggle-atmosphere") as HTMLInputElement;
+
   const miniGlobeCanvas = document.getElementById("mini-globe-canvas") as HTMLCanvasElement;
   renderMiniGlobeIcon(miniGlobeCanvas);
 
@@ -296,13 +320,17 @@ function initAtlasApp(): void {
     activeMode: "jelajahi",
     isPlaying: false,
     playbackSpeedIndex: 0,
+    activeStory: null,
+    activeStoryChapterIndex: 0,
+    currentQuizIndex: 0,
     quizScore: 0,
     quizTotal: 0,
+    quizStreak: 0,
+    ratingScore: 5,
   };
 
   const globe = new HistoricalGlobe(viewportEl);
 
-  // Cache DOM nodes for floating 3D labels & pins to avoid recreating DOM every frame
   const territoryLabelElements = new Map<string, HTMLElement>();
   const eventPinElements = new Map<string, HTMLElement>();
   let toastTimeout: number | undefined;
@@ -318,7 +346,7 @@ function initAtlasApp(): void {
     }
     toastTimeout = window.setTimeout(() => {
       eraToastEl.classList.remove("is-visible");
-    }, 2200);
+    }, 2400);
   }
 
   function renderTimelineEventDots(): void {
@@ -353,11 +381,11 @@ function initAtlasApp(): void {
       eventCardCategory.textContent = `KEKAISARAN & WILAYAH \u2022 ${startLbl} – ${endLbl}`;
       eventCardTitle.textContent = pol.name;
       eventCardDesc.textContent = pol.summary;
-      artifactLabel.textContent = `IBU KOTA: ${pol.capital.toUpperCase()}`;
+      artifactLabel.textContent = `IBU KOTA: ${pol.capital.toUpperCase()} \u2022 PEMIMPIN: ${pol.ruler}`;
       artifactTitle.textContent = `Luas Puncak: ${formatAreaKm2(pol.peakAreaKm2)} (Tahun ${
         formatYearLabel(pol.peakYear).full
       })`;
-      artifactQuote.textContent = `Wilayah kedaulatan ${pol.name} dipetakan berdasarkan basis data geospasial Cliopatria (Seshat).`;
+      artifactQuote.textContent = `Kedaulatan ${pol.name} dipetakan berdasarkan data geospasial Cliopatria (Seshat).`;
       btnJumpEventYear.textContent = `Ke puncak (${formatYearLabel(pol.peakYear).full})`;
       renderArtifactPreview(artifactCanvas, "seal", pol.colorToken);
       cardEventDetail.classList.remove("is-hidden");
@@ -367,7 +395,6 @@ function initAtlasApp(): void {
   }
 
   function rebuildOverlayElementsForYear(year: number): void {
-    // 1. Territory Labels
     const activePolities = getActivePolitiesForYear(year);
     const activePolityIds = new Set(activePolities.map((item) => item.polity.id));
 
@@ -397,7 +424,6 @@ function initAtlasApp(): void {
       }
     }
 
-    // 2. Event Pins
     const activeEvents = state.showEvents ? getActiveEventsForYear(year) : [];
     const activeEventIds = new Set(activeEvents.map((ev) => ev.id));
 
@@ -491,20 +517,73 @@ function initAtlasApp(): void {
       `;
 
       item.addEventListener("click", () => {
-        setYear(story.targetYear, true);
-        globe.flyTo(story.targetLat, story.targetLng, 2.25);
-        if (story.eventId) {
-          const ev = HISTORICAL_EVENTS.find((e) => e.id === story.eventId) || null;
-          state.selectedEvent = ev;
-          state.selectedPolity = null;
-          updateEventDetailCard();
-          updateOverlayPinSelection();
-        }
+        startStoryTour(story);
       });
 
       kisahListEl.appendChild(item);
     }
   }
+
+  function startStoryTour(story: KisahStory): void {
+    state.activeStory = story;
+    state.activeStoryChapterIndex = 0;
+    kisahListEl.classList.add("is-hidden");
+    storyPlayerView.classList.remove("is-hidden");
+    loadStoryChapter(0);
+  }
+
+  function loadStoryChapter(index: number): void {
+    if (!state.activeStory || !state.activeStory.chapters[index]) return;
+    state.activeStoryChapterIndex = index;
+    const ch = state.activeStory.chapters[index];
+    const total = state.activeStory.chapters.length;
+
+    storyPlayerProgress.textContent = `Bab ${index + 1} / ${total}`;
+    storyChapterTitle.textContent = ch.chapterTitle;
+    storyChapterDesc.textContent = ch.chapterText;
+
+    btnPrevChapter.style.visibility = index > 0 ? "visible" : "hidden";
+    btnNextChapter.textContent = index < total - 1 ? "Lanjut Bab" : "Selesai Kisah";
+
+    setYear(ch.year, true);
+    globe.flyTo(ch.lat, ch.lng, ch.zoom);
+
+    if (ch.highlightPolityId) {
+      const p = POLITIES.find((pol) => pol.id === ch.highlightPolityId) || null;
+      state.selectedPolity = p;
+      state.selectedEvent = null;
+      globe.renderYearTerritories(ch.year, ch.highlightPolityId);
+    } else if (ch.eventId) {
+      const ev = HISTORICAL_EVENTS.find((e) => e.id === ch.eventId) || null;
+      state.selectedEvent = ev;
+      state.selectedPolity = null;
+    }
+    updateEventDetailCard();
+    updateOverlayPinSelection();
+  }
+
+  btnBackToStories.addEventListener("click", () => {
+    state.activeStory = null;
+    storyPlayerView.classList.add("is-hidden");
+    kisahListEl.classList.remove("is-hidden");
+  });
+
+  btnPrevChapter.addEventListener("click", () => {
+    if (state.activeStory && state.activeStoryChapterIndex > 0) {
+      loadStoryChapter(state.activeStoryChapterIndex - 1);
+    }
+  });
+
+  btnNextChapter.addEventListener("click", () => {
+    if (!state.activeStory) return;
+    if (state.activeStoryChapterIndex < state.activeStory.chapters.length - 1) {
+      loadStoryChapter(state.activeStoryChapterIndex + 1);
+    } else {
+      state.activeStory = null;
+      storyPlayerView.classList.add("is-hidden");
+      kisahListEl.classList.remove("is-hidden");
+    }
+  });
 
   function setYear(newYear: number, triggerToastOnEraChange = true): void {
     const clamped = Math.max(MIN_YEAR, Math.min(MAX_YEAR, Math.round(newYear)));
@@ -525,18 +604,15 @@ function initAtlasApp(): void {
       }
     }
 
-    // Highlight active era label on timeline
     document.querySelectorAll(".era-label").forEach((el) => {
       el.classList.toggle("is-active", el.getAttribute("data-era") === era.id);
     });
 
-    // Update quick-year chips
     document.querySelectorAll(".quick-year-chip").forEach((el) => {
       const chipYear = Number(el.getAttribute("data-year"));
       el.classList.toggle("is-selected", chipYear === safeYear);
     });
 
-    // Update slider thumb position
     const sliderVal = yearToSliderValue(safeYear);
     timelineRangeInput.value = String(sliderVal);
     const pct = (sliderVal / 1000) * 100;
@@ -548,7 +624,6 @@ function initAtlasApp(): void {
     updateLeaderboardForYear(safeYear);
   }
 
-  // Update 2D screen positions of 3D labels & pins every frame
   globe.setOnFrame(() => {
     const activePolities = getActivePolitiesForYear(state.currentYear);
     for (const { polity } of activePolities) {
@@ -585,14 +660,12 @@ function initAtlasApp(): void {
     }
   });
 
-  // Wire up Timeline Scrubber
   timelineRangeInput.addEventListener("input", () => {
     const val = Number(timelineRangeInput.value);
     const targetYr = sliderValueToYear(val);
     setYear(targetYr, true);
   });
 
-  // Wire up Play / Pause Simulation
   let lastPlayTick = performance.now();
   function togglePlay(forceState?: boolean): void {
     state.isPlaying = forceState !== undefined ? forceState : !state.isPlaying;
@@ -630,7 +703,6 @@ function initAtlasApp(): void {
   }
   requestAnimationFrame(stepPlaybackLoop);
 
-  // Wire up Top-Left Action Buttons
   btnKisah.addEventListener("click", () => {
     state.showKisah = !state.showKisah;
     btnKisah.classList.toggle("is-active", state.showKisah);
@@ -692,7 +764,6 @@ function initAtlasApp(): void {
     }
   });
 
-  // Step Navigation Buttons (<<, <, >, >>)
   const sortedEventYears = Array.from(new Set(HISTORICAL_EVENTS.map((e) => e.year))).sort(
     (a, b) => a - b
   );
@@ -712,7 +783,6 @@ function initAtlasApp(): void {
     setYear(nextEventYear !== undefined ? nextEventYear : state.currentYear + 10, true);
   });
 
-  // Quick Year Chips
   document.querySelectorAll(".quick-year-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const targetYear = Number(chip.getAttribute("data-year"));
@@ -736,82 +806,62 @@ function initAtlasApp(): void {
     });
   });
 
-  // Interactive Quiz / Challenge Modes (SIAPA BERKUASA?, TAHUN BERAPA?, HARIAN)
-  function generateChallengeQuestion(mode: AtlasState["activeMode"]): void {
+  function loadQuizQuestion(mode: AtlasState["activeMode"]): void {
     challengeFeedback.classList.add("is-hidden");
     challengeOptions.innerHTML = "";
 
-    const targetPolity = POLITIES[Math.floor(Math.random() * POLITIES.length)];
-    const testYear = targetPolity.peakYear;
-    setYear(testYear, false);
-    globe.renderYearTerritories(testYear, targetPolity.id);
-    globe.flyTo(targetPolity.labelLat, targetPolity.labelLng, 2.35);
+    const filtered = QUIZ_QUESTIONS.filter((q) => q.mode === mode);
+    const q: QuizQuestion =
+      filtered.length > 0
+        ? filtered[state.currentQuizIndex % filtered.length]
+        : QUIZ_QUESTIONS[0];
 
-    if (mode === "siapa-berkuasa" || mode === "harian") {
-      challengeModeBadge.textContent =
-        mode === "harian" ? "TANTANGAN HARIAN ATLAS" : "KUIS GEOGRAFI SEJARAH";
-      challengeHeading.textContent = "Siapa Berkuasa di Wilayah Ini?";
-      challengePrompt.textContent = `Pada tahun ${
-        formatYearLabel(testYear).full
-      }, kekaisaran atau kerajaan manakah yang berpusat di ${targetPolity.capital} dan menguasai wilayah yang disorot pada bola dunia?`;
+    challengeModeBadge.textContent =
+      mode === "harian"
+        ? "TANTANGAN HARIAN ATLAS \u2022 STREAK 5 HARI"
+        : mode === "siapa-berkuasa"
+        ? "KUIS PENGUASA WILAYAH"
+        : "KUIS KRONOLOGI SEJARAH";
+    challengeHeading.textContent =
+      mode === "siapa-berkuasa"
+        ? "Siapa Berkuasa di Wilayah Ini?"
+        : mode === "tahun-berapa"
+        ? "Tahun Berapa Peta Ini?"
+        : "Tantangan Harian";
+    challengePrompt.textContent = q.prompt;
 
-      const distractors = POLITIES.filter((p) => p.id !== targetPolity.id)
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
-      const choices = [targetPolity, ...distractors].sort(() => Math.random() - 0.5);
+    setYear(q.year, false);
+    globe.renderYearTerritories(q.year, q.targetPolityId);
+    globe.flyTo(q.lat, q.lng, 2.3);
 
-      for (const choice of choices) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "challenge-option-btn";
-        btn.textContent = choice.name;
-        btn.addEventListener("click", () => {
-          state.quizTotal += 1;
-          const isCorrect = choice.id === targetPolity.id;
-          if (isCorrect) state.quizScore += 1;
-          btn.classList.add(isCorrect ? "is-correct" : "is-wrong");
-          challengeFeedback.textContent = isCorrect
-            ? `Benar! ${targetPolity.name} mencapai puncak kejayaan sekitar ${
-                formatYearLabel(targetPolity.peakYear).full
-              } dengan luas ${formatAreaKm2(targetPolity.peakAreaKm2)}.`
-            : `Jawaban yang tepat adalah ${targetPolity.name} (${
-                formatYearLabel(targetPolity.startYear).full
-              } – ${formatYearLabel(targetPolity.endYear).full}).`;
-          challengeFeedback.classList.remove("is-hidden");
-          challengeScore.textContent = `Skor: ${state.quizScore} / ${state.quizTotal}`;
+    for (const opt of q.options) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "challenge-option-btn";
+      btn.textContent = opt;
+      btn.addEventListener("click", () => {
+        state.quizTotal += 1;
+        const isCorrect = opt === q.correctAnswer;
+        if (isCorrect) {
+          state.quizScore += 1;
+          state.quizStreak += 1;
+        } else {
+          state.quizStreak = 0;
+        }
+
+        document.querySelectorAll(".challenge-option-btn").forEach((b) => {
+          const btnEl = b as HTMLButtonElement;
+          if (btnEl.textContent === q.correctAnswer) btnEl.classList.add("is-correct");
+          else if (btnEl === btn) btnEl.classList.add("is-wrong");
         });
-        challengeOptions.appendChild(btn);
-      }
-    } else if (mode === "tahun-berapa") {
-      challengeModeBadge.textContent = "KUIS KRONOLOGI SEJARAH";
-      challengeHeading.textContent = "Tahun Berapa Peta Ini?";
-      challengePrompt.textContent = `${targetPolity.name} sedang berada pada masa keemasannya (beribu kota di ${targetPolity.capital}). Pada tahun berapakah konfigurasi peta dunia ini berlangsung?`;
 
-      const offsets = [-450, -180, 0, 260];
-      const yearChoices = offsets
-        .map((off) => Math.max(MIN_YEAR, Math.min(MAX_YEAR, testYear + off)))
-        .sort(() => Math.random() - 0.5);
-
-      for (const yrChoice of yearChoices) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "challenge-option-btn";
-        btn.textContent = formatYearLabel(yrChoice).full;
-        btn.addEventListener("click", () => {
-          state.quizTotal += 1;
-          const isCorrect = yrChoice === testYear;
-          if (isCorrect) state.quizScore += 1;
-          btn.classList.add(isCorrect ? "is-correct" : "is-wrong");
-          challengeFeedback.textContent = isCorrect
-            ? `Tepat sekali! Tahun ${formatYearLabel(testYear).full} adalah masa puncak ${
-                targetPolity.name
-              }.`
-            : `Tahun yang tepat adalah ${formatYearLabel(testYear).full} (${targetPolity.name}).`;
-          challengeFeedback.classList.remove("is-hidden");
-          challengeScore.textContent = `Skor: ${state.quizScore} / ${state.quizTotal}`;
-        });
-        challengeOptions.appendChild(btn);
-      }
+        challengeFeedback.textContent = isCorrect
+          ? `Benar! ${q.explanation}`
+          : `Kurang tepat. ${q.explanation}`;
+        challengeFeedback.classList.remove("is-hidden");
+        challengeScore.textContent = `Skor: ${state.quizScore} / ${state.quizTotal} (${state.quizStreak} streak)`;
+      });
+      challengeOptions.appendChild(btn);
     }
   }
 
@@ -832,13 +882,15 @@ function initAtlasApp(): void {
         cardEventDetail.classList.add("is-hidden");
         panelKisah.classList.add("is-hidden");
         panelChallenge.classList.remove("is-hidden");
-        generateChallengeQuestion(mode);
+        state.currentQuizIndex = 0;
+        loadQuizQuestion(mode);
       }
     });
   });
 
   btnNextChallenge.addEventListener("click", () => {
-    generateChallengeQuestion(state.activeMode);
+    state.currentQuizIndex += 1;
+    loadQuizQuestion(state.activeMode);
   });
 
   btnCloseChallenge.addEventListener("click", () => {
@@ -846,7 +898,50 @@ function initAtlasApp(): void {
     if (jelajahiTab) jelajahiTab.click();
   });
 
-  // Initial setup: focus on Southeast Asia / Bangkitnya Sriwijaya (682 M) just like the highlight of the video!
+  btnRateApp.addEventListener("click", () => {
+    modalRating.classList.remove("is-hidden");
+  });
+
+  btnCloseModalRating.addEventListener("click", () => {
+    modalRating.classList.add("is-hidden");
+  });
+
+  document.querySelectorAll(".star-btn").forEach((star) => {
+    star.addEventListener("click", () => {
+      const val = Number(star.getAttribute("data-val"));
+      state.ratingScore = val;
+      document.querySelectorAll(".star-btn").forEach((s) => {
+        const sVal = Number(s.getAttribute("data-val"));
+        s.classList.toggle("is-active", sVal <= val);
+      });
+    });
+  });
+
+  btnSubmitRating.addEventListener("click", () => {
+    ratingToastMsg.textContent = `Terima kasih! Anda memberi nilai ${state.ratingScore} bintang pada Atlas Sejarah.`;
+    ratingToastMsg.classList.remove("is-hidden");
+    setTimeout(() => {
+      modalRating.classList.add("is-hidden");
+      ratingToastMsg.classList.add("is-hidden");
+    }, 1600);
+  });
+
+  btnMoreMenu.addEventListener("click", () => {
+    modalSettings.classList.remove("is-hidden");
+  });
+
+  btnCloseModalSettings.addEventListener("click", () => {
+    modalSettings.classList.add("is-hidden");
+  });
+
+  toggleAutorotate.addEventListener("change", () => {
+    globe.setAutoRotate(toggleAutorotate.checked);
+  });
+
+  toggleAtmosphere.addEventListener("change", () => {
+    globe.setAtmosphereVisible(toggleAtmosphere.checked);
+  });
+
   renderTimelineEventDots();
   renderKisahList();
   setYear(682, false);
