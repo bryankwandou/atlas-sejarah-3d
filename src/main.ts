@@ -943,9 +943,11 @@ function initAtlasApp(): void {
 
   renderTimelineEventDots();
   renderKisahList();
-  setYear(682, false);
-  updateEventDetailCard();
-  globe.flyTo(4.0, 96.0, 2.45);
+  setYear(622, false);
+  cardEventDetail.classList.add("is-hidden");
+  panelLeaderboard.classList.add("is-hidden");
+  panelKisah.classList.add("is-hidden");
+  globe.flyTo(20.0, 42.0, 2.65);
 }
 
 initAtlasApp();
